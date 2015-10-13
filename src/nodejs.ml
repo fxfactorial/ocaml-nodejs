@@ -1,5 +1,5 @@
 
+module Http = struct
+  include Http
+end
 
-
-let () =
-  print_endline "123"

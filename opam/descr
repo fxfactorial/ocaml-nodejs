@@ -1,0 +1,4 @@
+OCaml bindings for nodejs
+
+These are OCaml bindings to Nodejs Get all the power of the Nodejs
+ecosystem with the type safety of OCaml.

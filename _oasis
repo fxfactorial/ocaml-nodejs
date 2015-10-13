@@ -1,6 +1,6 @@
 OASISFormat: 0.4
 Name:        nodejs
-Version:     0.1.0
+Version:     0.0.1
 Synopsis:    OCaml bindings for nodejs
 Authors:     Edgar Aroutiounian <edgar.factorial@gmail.com>
 Maintainers: Edgar Aroutiounian <edgar.factorial@gmail.com>
@@ -9,7 +9,30 @@ License:     BSD-3-clause
 Plugins:     META (0.4), DevFiles (0.4)
 BuildTools: ocamlbuild
 
+Description:
+  These are OCaml bindings to Nodejs
+
+  Get all the power of the Nodejs ecosystem with the type safety of OCaml
+
+# Build the test program for node
+PostBuildCommand:js_of_ocaml server.byte
+# Clean up our mess
+PostCleanCommand:rm -f server.js
+
 Library nodejs
   Path:         src
   Modules:      Nodejs
+  CompiledObject: byte
   BuildDepends: js_of_ocaml, js_of_ocaml.ppx
+
+Executable run_tests
+  Install:false
+  Path:tests
+  MainIs:server.ml
+  BuildDepends: js_of_ocaml, js_of_ocaml.ppx, nodejs
+  CompiledObject:byte
+  BuildTools:ocamlbuild
+
+Test t
+  Command:$run_tests
+  TestTools:run_tests
