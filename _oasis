@@ -1,0 +1,15 @@
+OASISFormat: 0.4
+Name:        nodejs
+Version:     0.1.0
+Synopsis:    OCaml bindings for nodejs
+Authors:     Edgar Aroutiounian <edgar.factorial@gmail.com>
+Maintainers: Edgar Aroutiounian <edgar.factorial@gmail.com>
+Homepage:    https://github.com/fxfactorial/ocaml-nodejs
+License:     BSD-3-clause
+Plugins:     META (0.4), DevFiles (0.4)
+BuildTools: ocamlbuild
+
+Library nodejs
+  Path:         src
+  Modules:      Nodejs
+  BuildDepends: js_of_ocaml, js_of_ocaml.ppx
