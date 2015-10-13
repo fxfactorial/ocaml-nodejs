@@ -1,3 +1,4 @@
+S src
 B _build/src
 PKG js_of_ocaml js_of_ocaml.ppx
-EXT js_of_ocaml
+EXT js
