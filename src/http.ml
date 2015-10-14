@@ -57,18 +57,24 @@ let string_of_method = function
   | Unlock -> Js.string "unlock"
   | Unsubscribe -> Js.string "unsubscribe"
 
-class type http = object
-  method methods : Js.js_string Js.js_array Js.readonly_prop
+class type incoming_message = object
+  method httpVersion : Js.js_string Js.readonly_prop
 end
 
-let http () : http Js.t =
+class type server_response = object
+  method url : Js.js_string Js.readonly_prop
+end
+
+class type server = object
+  method listen : int -> (unit -> unit) Js.callback -> unit Js.meth
+end
+
+class type http = object
+  method methods : Js.js_string Js.js_array Js.readonly_prop
+  method createServer :
+    (incoming_message Js.t -> server_response Js.t -> unit) Js.callback ->
+    server Js.t Js.meth
+end
+
+let require () : http Js.t =
   Internal.require (Js.string "http")
-
-let port = Js.number_of_float 8080.0
-
-let handle_request (req: Js.Unsafe.any) (resp : Js.Unsafe.any) =
-  Js.Unsafe.meth_call resp "end" [|Js.string "It Works!" |> Js.Unsafe.inject|]
-
-let server =
-  Js.Unsafe.meth_call (http ()) "createServer"
-    [|Js.Unsafe.inject handle_request|]

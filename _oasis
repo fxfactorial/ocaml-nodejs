@@ -15,7 +15,7 @@ Description:
   Get all the power of the Nodejs ecosystem with the type safety of OCaml
 
 # Build the test program for node
-PostBuildCommand:js_of_ocaml server.byte
+PostBuildCommand: js_of_ocaml server.byte
 # Clean up our mess
 PostCleanCommand:rm -f server.js
 
