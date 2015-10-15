@@ -6,6 +6,10 @@ let test_modules () =
   let _ = Nodejs.Events.require () in
   print_endline "All Requires passed"
 
+let test_globals () =
+  let a = Nodejs.Process.process##.version in
+  print_endline (Js.to_string a)
+
 let start_server () =
   let http = Nodejs.Http.require () in
   let our_server =
@@ -17,6 +21,7 @@ let start_server () =
 
 let test_all () =
   test_modules ();
+  test_globals ();
   start_server ()
 
 let () = test_all ()
