@@ -61,20 +61,22 @@ end
 
 class type server_response = object
   method url : Js.js_string Js.readonly_prop
+  (* How do I say arbtriary JS Object <..> Js.t*)
+  (* method writeHead : int -> <..> Js.t -> Js.meth *)
 end
 
 class type client_request = object
-  method flush_headers : unit Js.callback -> unit Js.meth
-  method write : Js.js_string -> unit Js.meth
+  method flush_headers : unit -> unit Js.meth
+  method write : Js.js_string -> Js.json -> unit Js.meth
 end
 
 class type server = object
   method listen : int -> (unit -> unit) Js.callback -> unit Js.meth
   method close : (unit -> unit) Js.callback -> unit Js.meth
-  (* Not sure about this yet *)
-  method address : <port: Js.js_string Js.t Js.readonly_prop;
-                    family : Js.js_string Js.t Js.readonly_prop;
-                    address: Js.js_string Js.t Js.readonly_prop> Js.t Js.prop
+  method address :
+    unit -> <address: Js.js_string Js.t Js.readonly_prop;
+             family : Js.js_string Js.t Js.readonly_prop;
+             port: Js.js_string Js.t Js.readonly_prop> Js.t Js.meth
 end
 
 class type http = object
