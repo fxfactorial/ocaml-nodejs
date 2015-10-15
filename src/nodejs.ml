@@ -19,3 +19,7 @@ module Process = struct
 end
 
 let version = (Process.process##.version) |> Js.to_string
+
+module Fs = struct
+  include Fs
+end
