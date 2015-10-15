@@ -71,6 +71,11 @@ end
 class type server = object
   method listen : int -> (unit -> unit) Js.callback -> unit Js.meth
   method close : (unit -> unit) Js.callback -> unit Js.meth
+  method address :
+    unit ->
+    <port: Js.js_string Js.readonly_prop;
+     family : Js.js_string Js.readonly_prop;
+     address: Js.js_string Js.readonly_prop> Js.t
 end
 
 class type http = object

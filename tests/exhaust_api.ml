@@ -3,6 +3,7 @@ let test_modules () =
   let _ = Nodejs.Http.require () in
   let _ = Nodejs.Net.require () in
   let _ = Nodejs.Url.require () in
+  let _ = Nodejs.Events.require () in
   print_endline "All Requires passed"
 
 let start_server () =
