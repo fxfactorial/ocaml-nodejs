@@ -61,7 +61,7 @@ end
 
 class type server_response = object
   method url : Js.js_string Js.readonly_prop
-  (* How do I say arbtriary JS Object <..> Js.t*)
+  (** Be sure to be giving writeHead a JS Object and nothing else *)
   method writeHead : int -> Js.Unsafe.any -> unit Js.meth
   method end_ : Js.js_string Js.t -> unit Js.meth
 end
