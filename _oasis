@@ -16,11 +16,12 @@ Description:
 
 # Build the test program for node
 PostBuildCommand:
-  js_of_ocaml exhaust_api.byte; js_of_ocaml server.byte; 
+  js_of_ocaml exhaust_api.byte;
+  js_of_ocaml chat_server.byte; 
 
 # Clean up our mess
 PostCleanCommand:
-  rm -f exhaust_api.js server.js
+  rm -f exhaust_api.js chat_server.js
 
 Library nodejs
   Path:         src
@@ -37,10 +38,10 @@ Executable run_tests
   CompiledObject:byte
   BuildTools:ocamlbuild
 
-Executable server
+Executable chat_server
   Install:false
   Path:examples
-  MainIs:server.ml
+  MainIs:chat_server.ml
   BuildDepends: nodejs
   CompiledObject:byte
   BuildTools:ocamlbuild
