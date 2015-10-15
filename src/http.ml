@@ -1,5 +1,3 @@
-open Internal
-
 type http_methods = Checkout
                   | Connect
                   | Copy
@@ -65,8 +63,14 @@ class type server_response = object
   method url : Js.js_string Js.readonly_prop
 end
 
+class type client_request = object
+  method flush_headers : unit Js.callback -> unit Js.meth
+  method write : Js.js_string -> unit Js.meth
+end
+
 class type server = object
   method listen : int -> (unit -> unit) Js.callback -> unit Js.meth
+  method close : (unit -> unit) Js.callback -> unit Js.meth
 end
 
 class type http = object

@@ -5,3 +5,11 @@ include Internal
 module Http = struct
   include Http
 end
+
+module Net = struct
+  include Net
+end
+
+module Url = struct
+  include Url
+end

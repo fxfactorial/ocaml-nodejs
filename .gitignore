@@ -3,18 +3,9 @@ _build
 *.byte
 *.docdir
 
-tests/*.cmi
-tests/*.cmt
-tests/*.cmo
-tests/*.cma
-
 setup.data
 setup.log
-README.org
-scratch
 notes.txt
-dump_stats.ml
-scratch.c
-T
 scratch.js
 server.js
+exhaust_api.js

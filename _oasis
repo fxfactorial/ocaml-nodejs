@@ -15,20 +15,21 @@ Description:
   Get all the power of the Nodejs ecosystem with the type safety of OCaml
 
 # Build the test program for node
-PostBuildCommand: js_of_ocaml server.byte
+PostBuildCommand: js_of_ocaml exhaust_api.byte
 # Clean up our mess
-PostCleanCommand:rm -f server.js
+PostCleanCommand:rm -f exhaust_api.js
 
 Library nodejs
   Path:         src
   Modules:      Nodejs
+  InternalModules: Http, Url
   CompiledObject: byte
   BuildDepends: js_of_ocaml, js_of_ocaml.ppx
 
 Executable run_tests
   Install:false
   Path:tests
-  MainIs:server.ml
+  MainIs:exhaust_api.ml
   BuildDepends: js_of_ocaml, js_of_ocaml.ppx, nodejs
   CompiledObject:byte
   BuildTools:ocamlbuild
