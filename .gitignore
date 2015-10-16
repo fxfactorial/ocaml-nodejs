@@ -7,6 +7,11 @@ tests/*.cmo
 tests/*.cmt
 tests/*.out
 
+examples/*.cmi
+examples/*.cmo
+examples/*.cmt
+examples/*.out
+
 setup.data
 setup.log
 notes.txt

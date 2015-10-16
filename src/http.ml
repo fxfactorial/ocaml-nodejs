@@ -78,7 +78,9 @@ class type server = object
   (** Just tell the server to listen on this port and callback,
       ignore the result *)
   method listen_ignore : int -> (unit -> unit) Js.callback -> unit Js.meth
+
   method close : (unit -> unit) Js.callback -> unit Js.meth
+
   (** A read only JavaScript object with meta data about current
       server *)
   method address :
