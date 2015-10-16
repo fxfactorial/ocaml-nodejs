@@ -14,7 +14,7 @@ let test_globals () =
 let start_server () =
   let http = Nodejs.Http.require () in
   let our_server =
-    http##createServer_with_callback
+    http##createServer_callback
       (Js.wrap_callback
          (fun a b -> print_endline "Handled request"))
   in
@@ -23,7 +23,7 @@ let start_server () =
 
 let test_all () =
   test_modules ();
-  test_globals ()
-  (* start_server () *)
+  test_globals ();
+  start_server ()
 
 let () = test_all ()
