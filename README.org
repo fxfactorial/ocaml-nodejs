@@ -6,16 +6,42 @@
 
 These are [[https://github.com/ocsigen/js_of_ocaml][js_of_ocaml]] bindings to [[https://github.com/nodejs/node][nodejs]]
 
-As a general proof of concept you can
-do:
-1) ~make~
-2) ~node chat_server.js~
+Get all the power of the amazing ~node~ ecosystem while still getting
+the sanity and type safety of ~OCaml~.
 
-and open up localhost:8080, you'll have a working ~Node~ server.
+The examples directory contains a chat_server tutorial/example. To
+actually have that up and running, you'll need to have ~js_of_ocaml~
+bindings to [[https://github.com/socketio/socket.io][socket.io]], those are located [[https://github.com/fxfactorial/ocaml-npm-socket-io][here]]
 
-Get all the power of the ~Node~ ecosystem while still getting the
-sanity and type safety of ~OCaml~.
+* Steps to get the example working
+I assume that you have ~opam~, ~js_of_ocaml~ and of course ~node~
+installed. Until I get this all on ~opam~ you'll need to do the
+following steps.
+
+1) Get the ~nodejs~ package installed on your machine.
+#+BEGIN_SRC shell
+$ git clone https://github.com/fxfactorial/ocaml-nodejs
+$ cd ocaml-nodejs
+$ opam pin add nodejs . -y
+#+END_SRC
+
+2) Get the ~socket_io~ package installed on your machine.
+#+BEGIN_SRC shell
+$ git clone https://github.com/fxfactorial/ocaml-npm-socket-io
+$ cd ocaml-npm-socket-io
+$ opam pin add socket_io . -y
+#+END_SRC
+   
+3) Compile ~chat_server.ml~ into a working ~node~ program
+#+BEGIN_SRC shell
+$ cd examples
+$ make
+#+END_SRC
+
+and open up localhost:8080, you'll have a working ~node~ server.
 
 * Issues
-~Node~ has a pretty big API so its going to take me a little bit of
-time to cover the API.
+1) ~node~ has a pretty big API so its going to take me a little bit of
+   time to cover the API and the bindings that I'm also writing for
+   ~express~ and ~socket.io~
+2) ~JavaScript~

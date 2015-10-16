@@ -1,4 +1,4 @@
-let _ =
+let program () =
   let http = Nodejs.Http.require () in
   let fs = Nodejs.Fs.require () in
   let port = 8080 in
@@ -19,3 +19,9 @@ let _ =
         print_endline ("Started server!, running version " ^ Nodejs.version);
       end
     end
+
+let run p =
+  ignore (p ())
+
+let () =
+  run program
