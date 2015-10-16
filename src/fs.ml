@@ -1,5 +1,3 @@
-
-
 class type fs = object
   method readFile :
     Js.js_string Js.t ->
@@ -8,4 +6,4 @@ class type fs = object
 end
 
 let require () : fs Js.t =
- Internal.require (Js.string "fs")
+ Nodejs_globals.require (Js.string "fs")

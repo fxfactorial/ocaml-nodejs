@@ -5,4 +5,4 @@ class type net = object
 end
 
 let require () : net Js.t =
-  Internal.require (Js.string "net")
+  Nodejs_globals.require (Js.string "net")

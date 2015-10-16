@@ -1,4 +1,3 @@
-
 let js_object_of_alist a =
   a
   |> List.map (fun (key, value) -> (key, Js.Unsafe.inject value))
@@ -25,9 +24,9 @@ module Process = struct
   include Process
 end
 
-(** Get the versioning of the current running node runtime *)
-let version = (Process.process##.version) |> Js.to_string
-
 module Fs = struct
   include Fs
 end
+
+(** Get the versioning of the current running node runtime *)
+let version = (Process.process##.version) |> Js.to_string

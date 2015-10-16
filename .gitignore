@@ -2,6 +2,11 @@ _build
 *.byte
 *.docdir
 
+tests/*.cmi
+tests/*.cmo
+tests/*.cmt
+tests/*.out
+
 setup.data
 setup.log
 notes.txt

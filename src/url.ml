@@ -3,4 +3,4 @@ class type url = object
 end
 
 let require () : url Js.t =
-  Internal.require (Js.string "url")
+  Nodejs_globals.require (Js.string "url")

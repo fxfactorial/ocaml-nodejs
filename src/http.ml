@@ -82,10 +82,11 @@ end
 
 class type http = object
   method methods : Js.js_string Js.js_array Js.readonly_prop
-  method createServer :
+  method createServer : Js.Unsafe.any Js.t -> server Js.t Js.meth
+  method createServer_with_callback :
     (incoming_message Js.t -> server_response Js.t -> unit) Js.callback ->
     server Js.t Js.meth
 end
 
 let require () : http Js.t =
-  Internal.require (Js.string "http")
+  Nodejs_globals.require (Js.string "http")
