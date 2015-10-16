@@ -63,7 +63,8 @@ class type server_response = object
   method url : Js.js_string Js.readonly_prop
   (** Be sure to be giving writeHead a JS Object and nothing else *)
   method writeHead : int -> Js.Unsafe.any -> unit Js.meth
-  method end_ : Js.js_string Js.t -> unit Js.meth
+  method end_ : unit -> unit Js.meth
+  method end_data : Js.js_string Js.t -> unit Js.meth
 end
 
 class type client_request = object
@@ -72,8 +73,14 @@ class type client_request = object
 end
 
 class type server = object
-  method listen : int -> (unit -> unit) Js.callback -> unit Js.meth
+  (** Give a port and callback, get the handle of the server back *)
+  method listen : int -> (unit -> unit) Js.callback -> server Js.t Js.meth
+  (** Just tell the server to listen on this port and callback,
+      ignore the result *)
+  method listen_ignore : int -> (unit -> unit) Js.callback -> unit Js.meth
   method close : (unit -> unit) Js.callback -> unit Js.meth
+  (** A read only JavaScript object with meta data about current
+      server *)
   method address :
     unit -> <address: Js.js_string Js.t Js.readonly_prop;
              family : Js.js_string Js.t Js.readonly_prop;
@@ -83,9 +90,6 @@ end
 class type http = object
   method methods : Js.js_string Js.js_array Js.readonly_prop
   method createServer :
-    Js.Unsafe.any Js.t ->
-    server Js.t Js.meth
-  method createServer_callback :
     (incoming_message Js.t -> server_response Js.t -> unit) Js.callback ->
     server Js.t Js.meth
 end
