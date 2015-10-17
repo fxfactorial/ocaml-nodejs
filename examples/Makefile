@@ -8,7 +8,6 @@ define colorecho
 endef
 
 run:all clean
-	@echo "Running Node server, check localhost:8080\n"
 	@npm install socket.io
 	node chat_server.js
 

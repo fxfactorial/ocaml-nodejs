@@ -7,12 +7,10 @@ class type event_emitter = object
     Js.js_string Js.t ->
     (Js.Unsafe.any -> unit) Js.callback -> unit Js.meth
 
-  method emit : event Js.t -> bool Js.t Js.meth
-
-  method emit_withargs :
-    event Js.t ->
-    Js.Unsafe.any Js.js_array Js.t ->
-    bool Js.t Js.meth
+  (* method emit_withargs : *)
+  (*   event Js.t -> *)
+  (*   Js.Unsafe.any Js.js_array Js.t -> *)
+  (*   bool Js.t Js.meth *)
 
 end
 
