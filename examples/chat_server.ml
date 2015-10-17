@@ -1,6 +1,8 @@
 let program () =
   let http = Nodejs.Http.require () in
   let fs = Nodejs.Fs.require () in
+  let io = Socket_io.require () in
+
   let port = 8080 in
   let headers = Nodejs.js_object_of_alist [("Content-Type", "text/html")] in
   let server =
@@ -14,11 +16,13 @@ let program () =
               end)
       end)
   in
-  server##listen port
+  let app = server##listen port
     begin Js.wrap_callback begin fun () ->
         print_endline ("Started server!, running version " ^ Nodejs.version);
       end
     end
+  in
+  io##listen app
 
 let run p =
   ignore (p ())
