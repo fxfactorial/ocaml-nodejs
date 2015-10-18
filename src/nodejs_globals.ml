@@ -3,6 +3,6 @@ let require (s : Js.js_string Js.t) =
 
 let console : Js.Unsafe.any Js.t = Js.Unsafe.global##.console
 
-let __filename : Js.js_string Js.t = Js.Unsafe.global##.__filename
+let __filename () : Js.js_string Js.t = Js.Unsafe.global##.__filename
 
-let __dirname : Js.js_string Js.t = Js.Unsafe.global##.__dirname
+let __dirname () : Js.js_string Js.t = Js.Unsafe.global##.__dirname

@@ -56,23 +56,30 @@ let string_of_method = function
   | Unsubscribe -> Js.string "unsubscribe"
 
 class type incoming_message = object
+
   method httpVersion : Js.js_string Js.readonly_prop
+
 end
 
 class type server_response = object
+
   method url : Js.js_string Js.readonly_prop
   (** Be sure to be giving writeHead a JS Object and nothing else *)
   method writeHead : int -> Js.Unsafe.any -> unit Js.meth
   method end_ : unit -> unit Js.meth
   method end_data : Js.js_string Js.t -> unit Js.meth
+
 end
 
 class type client_request = object
+
   method flush_headers : unit -> unit Js.meth
   method write : Js.js_string -> Js.json -> unit Js.meth
+
 end
 
 class type server = object
+
   (** Give a port and callback, get the handle of the server back *)
   method listen : int -> (unit -> unit) Js.callback -> server Js.t Js.meth
   (** Just tell the server to listen on this port and callback,
@@ -86,11 +93,14 @@ class type server = object
   method address :
     unit -> <address: Js.js_string Js.t Js.readonly_prop;
              family : Js.js_string Js.t Js.readonly_prop;
-             port: Js.js_string Js.t Js.readonly_prop> Js.t Js.meth
+             port:    Js.js_string Js.t Js.readonly_prop> Js.t Js.meth
+
 end
 
 class type http = object
-  method methods : Js.js_string Js.js_array Js.readonly_prop
+
+  method methods : Js.js_string Js.js_array Js.t Js.readonly_prop
+  method createServer_withapp : 'a Js.t -> server Js.t Js.meth
   method createServer :
     (incoming_message Js.t -> server_response Js.t -> unit) Js.callback ->
     server Js.t Js.meth
