@@ -107,4 +107,4 @@ class type http = object
 end
 
 let require () : http Js.t =
-  Nodejs_globals.require (Js.string "http")
+  Nodejs_globals.require "http"

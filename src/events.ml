@@ -19,4 +19,4 @@ class type events = object
 end
 
 let require () : events Js.t =
-  Nodejs_globals.require (Js.string "events")
+  Nodejs_globals.require "events"

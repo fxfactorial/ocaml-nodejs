@@ -1,4 +1,5 @@
-OCaml bindings for nodejs
+Write OCaml, run on node
 
-These are OCaml bindings to Nodejs Get all the power of the Nodejs
-ecosystem with the type safety of OCaml.
+These are js_of_ocaml bindings to the node JavaScript API.
+Get all the power of the node ecosystem with the type safety
+of OCaml.

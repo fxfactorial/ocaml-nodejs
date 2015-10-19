@@ -1,6 +1,6 @@
 OASISFormat: 0.4
 Name:        nodejs
-Version:     0.0.1
+Version:     0.1
 Synopsis:    OCaml bindings for nodejs
 Authors:     Edgar Aroutiounian <edgar.factorial@gmail.com>
 Maintainers: Edgar Aroutiounian <edgar.factorial@gmail.com>
@@ -10,9 +10,11 @@ Plugins:     META (0.4), DevFiles (0.4)
 BuildTools: ocamlbuild
 
 Description:
-  These are OCaml bindings to Nodejs
+  Write OCaml, run on node
 
-  Get all the power of the Nodejs ecosystem with the type safety of OCaml
+  These are js_of_ocaml bindings to the node JavaScript API.
+  Get all the power of the node ecosystem with the type safety
+  of OCaml.
 
 Library nodejs
   Path:         src
@@ -20,6 +22,6 @@ Library nodejs
   # Every time you add a new module be sure to add it here to
   # InternalModules field
   InternalModules:
-    Http, Url, Nodejs_globals, Net, Events, Fs, Process
+    Http, Url, Net, Events, Fs, Process
   CompiledObject: byte
   BuildDepends: js_of_ocaml, js_of_ocaml.ppx

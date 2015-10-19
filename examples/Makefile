@@ -8,7 +8,7 @@ define colorecho
 endef
 
 run:all clean
-	# @npm install socket.io express
+	@npm install socket.io express
 	node chat_server.js
 
 all:
@@ -18,8 +18,9 @@ all:
 # clean:
 # 	@rm -f chat_server2.cmi chat_server2.cmo \
 # 	chat_server2.cmt a.out
+
 clean:
 	@rm -f chat_server.cmi chat_server.cmo \
-# 	chat_server.cmt a.out
+	chat_server.cmt a.out
 
 .PHONY:clean

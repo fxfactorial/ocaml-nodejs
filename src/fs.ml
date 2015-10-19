@@ -6,4 +6,4 @@ class type fs = object
 end
 
 let require () : fs Js.t =
- Nodejs_globals.require (Js.string "fs")
+ Nodejs_globals.require "fs"
