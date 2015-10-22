@@ -3,6 +3,10 @@ These are [js\_of\_ocaml](https://github.com/ocsigen/js_of_ocaml) bindings to [n
 Get all the power of the amazing `node` ecosystem with the sanity and
 type safety of `OCaml`.
 
+```shell
+$ opam install nodejs
+```
+
 Working Chat Server
 ![img](./node_server_working.gif)
 
@@ -72,12 +76,10 @@ following steps.
 1.  Get the `nodejs` package installed on your machine.
 
 ```shell
-$ git clone https://github.com/fxfactorial/ocaml-nodejs
-$ cd ocaml-nodejs
-$ opam pin add nodejs . -y
+$ opam install nodejs
 ```
 
-2.  Get the `socket_io` package installed on your machine.
+1.  Get the `socket_io` package installed on your machine.
 
 ```shell
 $ git clone https://github.com/fxfactorial/ocaml-npm-socket-io
@@ -85,7 +87,7 @@ $ cd ocaml-npm-socket-io
 $ opam pin add socket_io . -y
 ```
 
-2.  Compile `chat_server.ml` into a working `node` program. Note that
+1.  Compile `chat_server.ml` into a working `node` program. Note that
     this will install a local node module, the `socket.io` module.
 
 ```shell

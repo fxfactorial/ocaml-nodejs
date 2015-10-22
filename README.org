@@ -9,6 +9,10 @@ These are [[https://github.com/ocsigen/js_of_ocaml][js_of_ocaml]] bindings to [[
 Get all the power of the amazing ~node~ ecosystem with the sanity and
 type safety of ~OCaml~.
 
+#+BEGIN_SRC shell
+$ opam install nodejs
+#+END_SRC
+
 Working Chat Server
 [[./node_server_working.gif]]
 
@@ -75,9 +79,7 @@ following steps.
 
 1) Get the ~nodejs~ package installed on your machine.
 #+BEGIN_SRC shell
-$ git clone https://github.com/fxfactorial/ocaml-nodejs
-$ cd ocaml-nodejs
-$ opam pin add nodejs . -y
+$ opam install nodejs
 #+END_SRC
 2) Get the ~socket_io~ package installed on your machine.
 #+BEGIN_SRC shell
