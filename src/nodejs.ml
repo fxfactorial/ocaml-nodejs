@@ -1,9 +1,10 @@
 
 (** Helper to wrap callback, example:
-    server##listen port ( ( $ ) (fun () -> print_endline "Server Running")) *)
-let ( $ ) f = Js.wrap_callback f
+    server##listen port !@(fun () -> print_endline "Server Running") *)
+let ( !@ ) f = Js.wrap_callback f
 
-let ( @ ) s = Js.string s
+(** Shortcut for OCaml string -> JavaScript string, do !$ "Hello" *)
+let ( !$ ) s = Js.string s
 
 let js_object_of_alist a =
   List.map (fun (key, value) -> (key, Js.Unsafe.inject value)) a
