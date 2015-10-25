@@ -18,7 +18,7 @@ Description:
 
 Library nodejs
   Path:         src
-  Modules:      Nodejs, Nodejs_globals
+  Modules:      Nodejs, Nodejs_kit
   # Every time you add a new module be sure to add it here to
   # InternalModules field
   InternalModules:

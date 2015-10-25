@@ -1,14 +1,14 @@
 (* Basically a translation of
    http://arminboss.de/2013/tutorial-how-to-create-a-basic-chat-with-node-js/ *)
-open Nodejs
+open Nodejs_kit
 
 let program () =
-  let http = Http.require () in
-  let fs = Fs.require () in
+  let http = Nodejs.Http.require () in
+  let fs = Nodejs.Fs.require () in
   let io = Socket_io.require () in
 
   let port = 8080 in
-  let headers = Nodejs.js_object_of_alist [("Content-Type", "text/html")] in
+  let headers = js_object_of_alist [("Content-Type", "text/html")] in
   let server =
     http##createServer
       !@ begin
@@ -24,7 +24,7 @@ let program () =
       Printf.sprintf
         "\n\nStarted Server on local host port %d, node version: %s"
         port
-        Nodejs.version
+        Nodejs.Process.version
       |> print_endline
     end
   in
@@ -41,7 +41,7 @@ let program () =
       let innard = Js.Unsafe.get data "message" in
       io##.sockets##emit
         !$"message_to_client"
-        (Nodejs.js_object_of_alist [("message", innard)])
+        (js_object_of_alist [("message", innard)])
     end
   end
 

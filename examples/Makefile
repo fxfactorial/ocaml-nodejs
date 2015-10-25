@@ -16,11 +16,9 @@ all:
 	@js_of_ocaml a.out -o chat_server.js
 
 # clean:
-# 	@rm -f chat_server2.cmi chat_server2.cmo \
-# 	chat_server2.cmt a.out
+# 	@rm -f chat_server2.cmi chat_server2.cmo chat_server2.cmt a.out
 
 clean:
-	@rm -f chat_server.cmi chat_server.cmo \
-	chat_server.cmt a.out
+	@rm -f chat_server.cmi chat_server.cmo chat_server.cmt a.out
 
 .PHONY:clean

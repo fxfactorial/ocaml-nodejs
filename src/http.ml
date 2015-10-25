@@ -1,80 +1,32 @@
-type http_methods = Checkout
-                  | Connect
-                  | Copy
-                  | Delete
-                  | Get
-                  | Head
-                  | Lock
-                  | M_search
-                  | Merge
-                  | Mk_activity
-                  | Mk_calendar
-                  | Mk_col
-                  | Move
-                  | Notify
-                  | Options
-                  | Patch
-                  | Post
-                  | Propfind
-                  | Proppatch
-                  | Purge
-                  | Put
-                  | Report
-                  | Search
-                  | Subscribe
-                  | Trace
-                  | Unlock
-                  | Unsubscribe
-
-let string_of_method = function
-  | Checkout    -> Js.string "checkout"
-  | Connect     -> Js.string "connect"
-  | Copy        -> Js.string "copy"
-  | Delete-> Js.string "delete"
-  | Get-> Js.string "get"
-  | Head -> Js.string "head"
-  | Lock -> Js.string "lock"
-  | M_search -> Js.string "msearch"
-  | Merge -> Js.string "merge"
-  | Mk_activity -> Js.string "mkactivity"
-  | Mk_calendar -> Js.string "mkcalendar"
-  | Mk_col -> Js.string "mkcol"
-  | Move-> Js.string "move"
-  | Notify -> Js.string "notify"
-  | Options -> Js.string "options"
-  | Patch -> Js.string "patch"
-  | Post -> Js.string "post"
-  | Propfind -> Js.string "propfind"
-  | Proppatch -> Js.string "proppatch"
-  | Purge -> Js.string "purge"
-  | Put-> Js.string "put"
-  | Report -> Js.string "report"
-  | Search -> Js.string "search"
-  | Subscribe -> Js.string "subscribe"
-  | Trace -> Js.string "trace"
-  | Unlock -> Js.string "unlock"
-  | Unsubscribe -> Js.string "unsubscribe"
+open Nodejs_kit
 
 class type incoming_message = object
 
-  method httpVersion : Js.js_string Js.readonly_prop
+  method httpVersion : js_str Js.readonly_prop
 
 end
 
 class type server_response = object
 
-  method url : Js.js_string Js.readonly_prop
+  method url : js_str Js.readonly_prop
+
   (** Be sure to be giving writeHead a JS Object and nothing else *)
-  method writeHead : int -> Js.Unsafe.any -> unit Js.meth
+  method writeHead : int -> Js.Unsafe.any Js.t -> unit Js.meth
+
+  method writeHead_withMessage :
+    int -> js_str -> 'a Js.t -> unit Js.meth
+
   method end_ : unit -> unit Js.meth
-  method end_data : Js.js_string Js.t -> unit Js.meth
+
+  method end_data : js_str -> unit Js.meth
 
 end
 
 class type client_request = object
 
   method flush_headers : unit -> unit Js.meth
-  method write : Js.js_string -> Js.json -> unit Js.meth
+
+  method write : js_str -> Js.json -> unit Js.meth
 
 end
 
@@ -82,6 +34,7 @@ class type server = object
 
   (** Give a port and callback, get the handle of the server back *)
   method listen : int -> (unit -> unit) Js.callback -> server Js.t Js.meth
+
   (** Just tell the server to listen on this port and callback,
       ignore the result *)
   method listen_ignore : int -> (unit -> unit) Js.callback -> unit Js.meth
@@ -91,20 +44,23 @@ class type server = object
   (** A read only JavaScript object with meta data about current
       server *)
   method address :
-    unit -> <address: Js.js_string Js.t Js.readonly_prop;
-             family : Js.js_string Js.t Js.readonly_prop;
-             port:    Js.js_string Js.t Js.readonly_prop> Js.t Js.meth
+    unit -> <address: js_str Js.readonly_prop;
+             family : js_str Js.readonly_prop;
+             port:    js_str Js.readonly_prop> Js.t Js.meth
 
 end
 
 class type http = object
 
   method methods : Js.js_string Js.js_array Js.t Js.readonly_prop
+
   method createServer_withapp : 'a Js.t -> server Js.t Js.meth
+
   method createServer :
     (incoming_message Js.t -> server_response Js.t -> unit) Js.callback ->
     server Js.t Js.meth
+
 end
 
 let require () : http Js.t =
-  Nodejs_globals.require "http"
+  Nodejs_kit.require "http"

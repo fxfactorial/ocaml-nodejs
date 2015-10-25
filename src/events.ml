@@ -1,10 +1,12 @@
+open Nodejs_kit
+
 class type event = object
 
 end
 
 class type event_emitter = object
   method on :
-    Js.js_string Js.t ->
+    js_str ->
     (Js.Unsafe.any -> unit) Js.callback -> unit Js.meth
 
   (* method emit_withargs : *)
@@ -19,4 +21,4 @@ class type events = object
 end
 
 let require () : events Js.t =
-  Nodejs_globals.require "events"
+  Nodejs_kit.require "events"
