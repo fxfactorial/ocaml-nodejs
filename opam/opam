@@ -27,3 +27,4 @@ depends: [
   "oasis" {build & >= "0.4"}
   "ocamlfind" {build}
 ]
+available: [ocaml-version >= "4.02"]
