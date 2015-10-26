@@ -64,5 +64,4 @@ class type http = object
 
 end
 
-let require () : http Js.t =
-  Nodejs_kit.require "http"
+let require () : http Js.t = require "http"

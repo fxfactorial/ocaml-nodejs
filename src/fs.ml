@@ -9,5 +9,4 @@ class type fs = object
 
 end
 
-let require () : fs Js.t =
- Nodejs_kit.require "fs"
+let require () : fs Js.t = require "fs"

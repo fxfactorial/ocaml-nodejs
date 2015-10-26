@@ -1,8 +1,7 @@
-
+open Nodejs_kit
 
 class type net = object
 
 end
 
-let require () : net Js.t =
-  Nodejs_kit.require "net"
+let require () : net Js.t = require "net"
