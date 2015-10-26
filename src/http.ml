@@ -32,7 +32,7 @@ end
 
 class type server = object
 
-  inherit Events.event_emitter
+  inherit [(Js.Unsafe.any -> unit)] Events.event_emitter
 
   (** Give a port and callback, get the handle of the server back *)
   method listen : int -> (unit -> unit) Js.callback -> server Js.t Js.meth

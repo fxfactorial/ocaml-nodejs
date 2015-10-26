@@ -41,10 +41,10 @@ end
 
     All EventEmitters emit the event 'newListener' when new listeners
     are added and 'removeListener' when a listener is removed.*)
-class type event_emitter = object
+class type ['a] event_emitter = object
 
   method addListener :
-    (Js.Unsafe.any -> unit) Js.callback -> event_emitter Js.meth
+    (Js.Unsafe.any -> unit) Js.callback -> 'a event_emitter Js.meth
 
   (** Adds a listener to the end of the listeners array for the
       specified event. No checks are made to see if the listener has
@@ -53,20 +53,20 @@ class type event_emitter = object
       times.*)
   method on :
     js_str ->
-    (Js.Unsafe.any -> unit) Js.callback -> event_emitter Js.meth
+    'a Js.callback -> 'a event_emitter Js.meth
 
   (** Adds a one time listener for the event. This listener is invoked
       only the next time the event is fired, after which it is removed.*)
   method once :
     js_str ->
-    (Js.Unsafe.any -> unit) Js.callback -> event_emitter Js.meth
+    (Js.Unsafe.any -> unit) Js.callback -> 'a event_emitter Js.meth
 
   (** Removes a listener from the listener array for the specified
       event. Caution: changes array indices in the listener array behind
       the listener.*)
   method removeListener :
     js_str ->
-    (Js.Unsafe.any -> unit) Js.callback -> event_emitter Js.meth
+    (Js.Unsafe.any -> unit) Js.callback -> 'a event_emitter Js.meth
 
   method removeAllListeners_event : js_str -> unit Js.meth
 
@@ -86,5 +86,5 @@ class type event_emitter = object
 
 end
 
-let require () : event_emitter Js.t =
+let require () : 'a event_emitter Js.t =
   Nodejs_kit.require "events"
