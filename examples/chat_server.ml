@@ -41,12 +41,20 @@ let () =
   let module H = (val Nodejs.require Nodejs.Http) in
   let module Fs = (val Nodejs.require Nodejs.Fs) in
   let our_server =
-    H.create_server begin fun _ _ ->
+    H.create_server begin fun incoming response ->
       print_endline "Got a request";
-      Fs.read_file "./client.html" None begin fun err data ->
-        print_endline data
 
-      end;
+      (* let a = Js.Unsafe.get incoming "httpVersion" in *)
+      (* let b = Js.to_string a in *)
+      print_endline incoming#http_version;
+
+      (* print_endline (new H.incoming_message incoming)#http_version; *)
+
+      (* Fs.read_file "./client.html" None begin fun err data -> *)
+      (*   print_endline data *)
+      (* end; *)
+
+
     end
   in
   our_server#listen 8080 (fun () -> print_endline "Started Server")

@@ -22,8 +22,7 @@ module type Error = sig
 end
 
 module Error = struct
-  class error = object
-  end
+  class error = object end
 end
 
 module type Http = sig
@@ -34,7 +33,9 @@ module type Http = sig
                  Proppath | Purge | Put | Report | Search | Subscribe |
                  Trace | Unlock | Unsubscribe
 
-  class type incoming_message = object  end
+  class type incoming = object
+    method http_version : string
+  end
 
   class type server_response = object end
 
@@ -42,7 +43,7 @@ module type Http = sig
     method listen : int -> (unit -> unit) -> unit
   end
 
-  val create_server : (incoming_message -> server_response -> unit) -> server
+  val create_server : (incoming -> server_response -> unit) -> server
 
 end
 
@@ -54,23 +55,18 @@ module Http = struct
                  Proppath | Purge | Put | Report | Search | Subscribe |
                  Trace | Unlock | Unsubscribe
 
-  module Raw_js = struct
+  class incoming raw_js = object
 
-    class type http = object end
-    class type server = object end
-
+    method http_version =
+      Js.Unsafe.get raw_js "httpVersion" |> Js.to_string
   end
 
-  class incoming_message = object end
-  class server_response = object
-
-  end
+  class server_response = object end
 
   class server handler = object(self)
 
-    val raw_js_server : Raw_js.server Js.t =
-      let h : Raw_js.http Js.t = require_module "http" in
-      m h "createServer" [|i handler|]
+    val raw_js_server =
+      m (require_module "http") "createServer" [|i handler|]
 
     method listen (port:int) (handler : (unit -> unit)) : unit =
       m raw_js_server "listen" [|i port; i handler|]
@@ -78,7 +74,11 @@ module Http = struct
   end
 
   let create_server handler =
-    new server handler
+    let wrapped_handler = fun incoming_msg response ->
+      let a = new incoming incoming_msg in
+      handler a response
+    in
+    new server wrapped_handler
 
 end
 
@@ -91,10 +91,6 @@ module type Fs = sig
 end
 
 module Fs = struct
-
-  module Raw_js = struct
-    class type fs = object end
-  end
 
   type flag = Read | Write | Read_write | Append
 
@@ -109,7 +105,7 @@ module Fs = struct
       (path : string)
       opts
       (callback : (Error.error -> string -> unit)) =
-    let fs : Raw_js.fs Js.t = require_module "fs" in
+    let fs = require_module "fs" in
     let path = Js.string path in
     (* Things given to inject need to already be Js.t objects *)
     match opts with
