@@ -39,10 +39,14 @@
 
 let () =
   let module H = (val Nodejs.require Nodejs.Http) in
+  let module Fs = (val Nodejs.require Nodejs.Fs) in
   let our_server =
     H.create_server begin fun _ _ ->
-      print_endline "hello"
+      print_endline "Got a request";
+      Fs.read_file "./client.html" None begin fun err data ->
+        print_endline data
+
+      end;
     end
   in
-
-  our_server#listen 8080 (fun () -> print_endline "did this work")
+  our_server#listen 8080 (fun () -> print_endline "Started Server")
