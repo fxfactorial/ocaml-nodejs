@@ -1,4 +1,5 @@
-pkgs := nodejs,socket_io,express
+pkgs := nodejs #,socket_io,express
+js_debug := --debug-info --no-inline --pretty
 
 # Do not use it breaks the script, very odd!
 define colorecho
@@ -8,12 +9,12 @@ define colorecho
 endef
 
 run:all clean
-	@npm install socket.io express
+	# @npm install socket.io express
 	node chat_server.js
 
 all:
 	@ocamlfind ocamlc chat_server.ml -package $(pkgs) -linkpkg
-	@js_of_ocaml a.out -o chat_server.js
+	@js_of_ocaml $(js_debug) a.out -o chat_server.js
 
 # clean:
 # 	@rm -f chat_server2.cmi chat_server2.cmo chat_server2.cmt a.out
