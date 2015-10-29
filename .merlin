@@ -1,3 +1,3 @@
 S src
 B _build/src
-PKG js_of_ocaml js_of_ocaml.ppx nodejs socket_io express
+PKG js_of_ocaml js_of_ocaml.ppx nodejs socket_io express yojson

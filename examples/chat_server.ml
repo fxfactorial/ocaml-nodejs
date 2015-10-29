@@ -44,17 +44,26 @@ let () =
     H.create_server begin fun incoming response ->
       print_endline "Got a request";
 
-      (* let a = Js.Unsafe.get incoming "httpVersion" in *)
-      (* let b = Js.to_string a in *)
-      print_endline incoming#http_version;
+      (* List.iter (fun (code, message) -> print_endline message) H.status_codes *)
 
-      (* print_endline (new H.incoming_message incoming)#http_version; *)
-
-      (* Fs.read_file "./client.html" None begin fun err data -> *)
-      (*   print_endline data *)
+      (* These all work *)
+      (* incoming#headers |> Cohttp.Header.iter begin fun key values -> *)
+      (*   print_endline key *)
       (* end; *)
+      (* print_endline incoming#http_version; *)
+      (* incoming#on_close (fun () -> print_endline "Connection closed"); *)
+      (* List.iter (fun (key, value) -> print_endline value) incoming#headers; *)
+      (* List.iter print_endline incoming#raw_headers; *)
+      (* print_endline incoming#headers; *)
 
+      Fs.read_file "./client.html" None begin fun err data ->
+        response#write_head 200 [("Content-type", "text/html")];
+        response#end_ ~data:(H.String data) ()
+      end;
 
     end
   in
-  our_server#listen 8080 (fun () -> print_endline "Started Server")
+  our_server#listen ~port:8080 begin fun () ->
+    Printf.sprintf "Started Server and Running node: %s" (new Nodejs.process#version)
+    |> print_endline
+  end

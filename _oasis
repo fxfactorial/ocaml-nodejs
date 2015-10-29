@@ -20,4 +20,4 @@ Library nodejs
   Path:         src
   Modules:      Nodejs
   CompiledObject: byte
-  BuildDepends: js_of_ocaml, js_of_ocaml.ppx
+  BuildDepends: js_of_ocaml, js_of_ocaml.ppx, yojson
