@@ -15,18 +15,26 @@ let __dirname () =
   (Js.Unsafe.eval_string "__dirname" : Js.js_string Js.t) |> Js.to_string
 
 (* Helpers for me *)
+(** Call method of a JavaScript object *)
 let m = Js.Unsafe.meth_call
+(** Inject something as a JS object, be sure its Js.t already,
+    functions seemingly exempt *)
 let i = Js.Unsafe.inject
+(** Get a property of a JavaScript object by name *)
 let g = Js.Unsafe.get
 
+(** Turn a JavaScript Object into a string *)
 let stringify o =
   m (Js.Unsafe.variable "JSON") "stringify" [|i o|] |> Js.to_string
 
+(** Turn an OCaml string into a JavaScript string *)
 let to_js_str s = Js.string s |> Js.Unsafe.inject
 
+(** Turn a JavaScript Object into a Yojson object *)
 let to_json obj =
   stringify obj |> Yojson.Basic.from_string
 
+(** Create a JavaScript Object out of an alist *)
 let obj_of_alist a_l =
   List.map (fun (key, value) -> (key, Js.Unsafe.inject value)) a_l
   |> Array.of_list
