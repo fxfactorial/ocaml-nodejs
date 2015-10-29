@@ -1,4 +1,4 @@
-pkgs := nodejs,socket_io,express
+pkgs := nodejs,socket_io
 
 # Do not use it breaks the script, very odd!
 define colorecho
@@ -8,7 +8,7 @@ define colorecho
 endef
 
 run:all clean
-	@npm install socket.io express
+	@npm install socket.io
 	node chat_server.js
 
 all:
