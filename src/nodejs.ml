@@ -124,7 +124,7 @@ module type Http = sig
   end
 
   class type server = object
-    method listen : port:int -> (unit -> unit) -> unit
+    method listen : port:int -> (unit -> unit) -> server
     (* method on_request *)
     (* method on_connection *)
     (* method on_close *)
@@ -244,7 +244,7 @@ module Http = struct
     (* method on_upgrade *)
     (* method on_client_error *)
 
-    method listen ~port:(port : int) (handler : (unit -> unit)) : unit =
+    method listen ~port:(port : int) (handler : (unit -> unit)) : server =
       m raw_js_server "listen" [|i port; i handler|]
 
   end
@@ -294,13 +294,20 @@ module Fs = struct
       | _ -> ()
 end
 
-type 'a modules = Http : (module Http) modules
+type 'a modules = ..
+
+type 'a modules += Http : (module Http) modules
                 | Fs : (module Fs) modules
                 | Error : (module Error) modules
                 | Buffer : (module Buffer) modules
 
+type exn += Not_builtin
+
+(** Client abstraction of node's builtin modules *)
 let require : type a . a modules -> a = function
   | Http -> (module Http : Http)
   | Fs -> (module Fs : Fs)
   | Error -> (module Error : Error)
   | Buffer -> (module Buffer : Buffer)
+  | _ -> raise Not_builtin
+
