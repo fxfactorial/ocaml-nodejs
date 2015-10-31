@@ -1,4 +1,4 @@
-pkgs := nodejs,socket_io
+pkgs := socket_io
 js_debug := --debug-info --no-inline --pretty
 
 # Do not use it breaks the script, very odd!
