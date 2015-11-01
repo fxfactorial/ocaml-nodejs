@@ -18,8 +18,6 @@ Description:
 
 Library nodejs
   Path:         src
-  Modules:      Nodejs, Nodejs_kit
-  InternalModules:
-    Http, Url, Net, Events, Fs, Process
+  Modules:      Nodejs
   CompiledObject: byte
-  BuildDepends: js_of_ocaml, js_of_ocaml.ppx
+  BuildDepends: js_of_ocaml, js_of_ocaml.ppx, yojson
