@@ -56,7 +56,7 @@ class process = object
   (* method rejections_handled *)
 
   method version =
-    Js.Unsafe.get raw_process "version" |> Js.to_string
+    raw_process <!> "version" |> Js.to_string
 
 end
 
@@ -153,7 +153,7 @@ module Http = struct
   type chunk = String of string | Buffer of Buffer.buffer
 
   let status_codes =
-    g (require_module "http") "STATUS_CODES" |> to_json
+    (require_module "http") <!> "STATUS_CODES" |> to_json
     |> Yojson.Basic.Util.to_assoc
     |> List.map begin fun (code, message) ->
       (int_of_string code, Yojson.Basic.Util.to_string message)
@@ -162,18 +162,18 @@ module Http = struct
   class incoming_message raw_js = object
 
     method http_version =
-      g raw_js "httpVersion" |> Js.to_string
+      raw_js <!> "httpVersion" |> Js.to_string
 
     method on_close (f : (unit -> unit)) : unit =
       m raw_js "on" [| to_js_str "close"; Js.Unsafe.inject f|]
 
     method headers =
-      g raw_js "headers" |> to_json
+      raw_js <!> "headers" |> to_json
       |> Yojson.Basic.Util.to_assoc
       |> List.map (fun (a, b) -> (a, Yojson.Basic.Util.to_string b))
 
     method raw_headers =
-      (g raw_js "rawHeaders" : Js.js_string Js.t Js.js_array Js.t)
+      (raw_js <!> "rawHeaders" : Js.js_string Js.t Js.js_array Js.t)
       |> Js.to_array
       |> Array.map Js.to_string
       |> Array.to_list
