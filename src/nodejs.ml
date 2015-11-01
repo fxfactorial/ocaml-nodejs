@@ -3,6 +3,11 @@ let require_module s =
     (Js.Unsafe.js_expr "require")
     [|Js.Unsafe.inject (Js.string s)|]
 
+(** Use for JavaScript Object literals *)
+let ( !! ) i = Js.Unsafe.inject i
+
+let ( <!> ) obj field = Js.Unsafe.get obj field
+
 (** Same as console.log *)
 let log obj = Firebug.console##log obj
 
@@ -14,7 +19,6 @@ let __filename () =
 let __dirname () =
   (Js.Unsafe.eval_string "__dirname" : Js.js_string Js.t) |> Js.to_string
 
-(* Helpers for me *)
 (** Call method of a JavaScript object *)
 let m = Js.Unsafe.meth_call
 (** Inject something as a JS object, be sure its Js.t already,
@@ -138,7 +142,6 @@ module type Http = sig
 
 end
 
-
 module Http = struct
 
   type methods = Checkout | Connect | Copy | Delete | Get | Head | Lock |
@@ -195,7 +198,9 @@ module Http = struct
       match status_message with
       | None -> m raw_js "writeHead" [|i status_code; i (obj_of_alist headers)|]
       | Some msg ->
-        m raw_js "writeHead" [|i status_code; i (Js.string msg); i (obj_of_alist headers)|]
+        m raw_js "writeHead" [|i status_code;
+                               i (Js.string msg);
+                               i (obj_of_alist headers)|]
 
     (* method set_timeout *)
     (* method status_code *)
@@ -234,7 +239,7 @@ module Http = struct
   class server handler = object(self)
 
     val raw_js_server =
-      m (require_module "http") "createServer" [|i handler|]
+      m (require_module "http") "createServer" [|i (Js.wrap_callback handler)|]
 
     (* method on_request *)
     (* method on_connection *)
@@ -245,7 +250,7 @@ module Http = struct
     (* method on_client_error *)
 
     method listen ~port:(port : int) (handler : (unit -> unit)) : server =
-      m raw_js_server "listen" [|i port; i handler|]
+      m raw_js_server "listen" [|i port; i (Js.wrap_callback handler)|]
 
   end
 
@@ -262,7 +267,8 @@ module type Fs = sig
   type options = { encoding : string option; flag : flag option }
 
   val read_file :
-    string -> options option -> (Error.error -> string -> unit) -> unit
+    ?options:options -> path:string -> (Error.error -> string -> unit) -> unit
+
 end
 
 module Fs = struct
@@ -277,13 +283,14 @@ module Fs = struct
   type options = { encoding : string option; flag : flag option }
 
   let read_file
-      (path : string)
-      opts
+      ?options
+      ~path:(path : string)
       (callback : (Error.error -> string -> unit)) =
     let fs = require_module "fs" in
     let path = Js.string path in
+    let callback = Js.wrap_callback callback in
     (* Things given to inject need to already be Js.t objects *)
-    match opts with
+    match options with
     | None ->
       m fs "readFile" [|i path; i callback|]
     | Some opts -> match opts with
@@ -294,14 +301,10 @@ module Fs = struct
       | _ -> ()
 end
 
-type 'a modules = ..
-
-type 'a modules += Http : (module Http) modules
+type 'a modules = Http : (module Http) modules
                 | Fs : (module Fs) modules
                 | Error : (module Error) modules
                 | Buffer : (module Buffer) modules
-
-type exn += Not_builtin
 
 (** Client abstraction of node's builtin modules *)
 let require : type a . a modules -> a = function
@@ -309,5 +312,3 @@ let require : type a . a modules -> a = function
   | Fs -> (module Fs : Fs)
   | Error -> (module Error : Error)
   | Buffer -> (module Buffer : Buffer)
-  | _ -> raise Not_builtin
-

@@ -16,61 +16,46 @@ dependencies and make file in the `examples` directory.
 ```ocaml
  1  (* Basically a translation of
  2     http://arminboss.de/2013/tutorial-how-to-create-a-basic-chat-with-node-js/ *)
- 3  open Nodejs_kit
+ 3  open Nodejs
  4  
- 5  let program () =
- 6    let http = Nodejs.Http.require () in
- 7    let fs = Nodejs.Fs.require () in
+ 5  let () =
+ 6    let module H = (val require Http) in
+ 7    let module Fs = (val require Fs) in
  8    let io = Socket_io.require () in
- 9  
-10    let port = 8080 in
-11    let headers = js_object_of_alist [("Content-Type", "text/html")] in
-12    let server =
-13      http##createServer
-14        !@ begin
-15        fun request response ->
-16          fs##readFile !$"./client.html"
-17            !@ (fun error raw_data ->
-18                response##writeHead 200 headers;
-19                response##end_data raw_data)
-20      end
-21    in
-22    let app = server##listen port
-23        !@ begin fun () ->
-24        Printf.sprintf
-25          "\n\nStarted Server on local host port %d, node version: %s"
-26          port
-27          Nodejs.Process.version
-28        |> print_endline
-29      end
-30    in
-31    let io = io##listen app in
-32    (* Gives back a namespace object *)
-33    io##.sockets##on
-34      !$ "connection"
-35      (* And now we get a socket *)
-36      !@ begin fun socket ->
-37      socket##on
-38        !$ "message_to_server"
-39        (* For which we have some data, its an object *)
-40        !@ begin fun data ->
-41        let innard = Js.Unsafe.get data "message" in
-42        io##.sockets##emit
-43          !$"message_to_client"
-44          (js_object_of_alist [("message", innard)])
-45      end
-46    end
-47  
-48  let run p =
-49    ignore (p ())
-50  
-51  let () =
-52    run program
+ 9    let server =
+10      H.create_server begin fun incoming response ->
+11  
+12        Fs.read_file ~path:"./client.html" begin fun err data ->
+13          response#write_head ~status_code:200 [("Content-type", "text/html")];
+14          response#end_ ~data:(H.String data) ()
+15  
+16        end
+17      end
+18    in
+19    let app = server#listen ~port:8080 begin fun () ->
+20        Printf.sprintf
+21          "Started Server and Running node: %s" (new Nodejs.process#version)
+22        |> print_endline
+23      end
+24    in
+25  
+26    let io = io#listen app in
+27    io#sockets#on_connection begin fun socket ->
+28  
+29      socket#on "message_to_server" begin fun data ->
+30  
+31        io#sockets#emit
+32          ~event_name:"message_to_client"
+33          !!(object%js val message = data <!> "message" end)
+34  
+35      end
+36    end
 ```
 
-The `!$` operator is a unary function to turn an OCaml string into a
-JavaScript string and the `!@` operator is a unary function to wrap an
-OCaml function as a JavaScript callback.
+The `<!>` infix operator is just a way to get a field of a JavaScript
+Object and the `!!` prefix operator is a way lift the js\_of\_ocaml
+object literal as a JavaScript object. Notice the high level nature of
+the code utilizing OCaml's features like named parameters.
 
 # Steps to get the example working
 

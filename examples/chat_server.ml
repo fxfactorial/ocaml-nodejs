@@ -1,18 +1,19 @@
 (* Basically a translation of
    http://arminboss.de/2013/tutorial-how-to-create-a-basic-chat-with-node-js/ *)
+open Nodejs
 
 let () =
-  let module H = (val Nodejs.require Nodejs.Http) in
-  let module Fs = (val Nodejs.require Nodejs.Fs) in
+  let module H = (val require Http) in
+  let module Fs = (val require Fs) in
   let io = Socket_io.require () in
   let server =
     H.create_server begin fun incoming response ->
 
-      Fs.read_file "./client.html" None begin fun err data ->
-        response#write_head 200 [("Content-type", "text/html")];
+      Fs.read_file ~path:"./client.html" begin fun err data ->
+        response#write_head ~status_code:200 [("Content-type", "text/html")];
         response#end_ ~data:(H.String data) ()
 
-      end;
+      end
     end
   in
   let app = server#listen ~port:8080 begin fun () ->
@@ -26,11 +27,10 @@ let () =
   io#sockets#on_connection begin fun socket ->
 
     socket#on "message_to_server" begin fun data ->
-      let innard = Nodejs.g data "message" in
 
       io#sockets#emit
-        "message_to_client"
-        (Nodejs.i (object%js val message = Nodejs.i innard end))
+        ~event_name:"message_to_client"
+        !!(object%js val message = data <!> "message" end)
 
     end
   end
