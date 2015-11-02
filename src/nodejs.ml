@@ -62,95 +62,18 @@ class process = object
 
 end
 
-
-module type Error = sig
-  class type error = object end
-end
-
 module Error = struct
   class error = object end
 end
 
-module type Buffer = sig
-  class type buffer = object
-
-  end
-end
 
 module Buffer = struct
   class buffer = object end
 end
 
-module type Events = sig
-  class type event = object end
-end
 
 module Events = struct
   class event = object end
-end
-
-
-module type Http = sig
-
-  type methods = Checkout | Connect | Copy | Delete | Get | Head | Lock |
-                 M_search | Merge | Mkactivity | Mkcalendar | Mkcol |
-                 Move | Notify | Options | Patch | Post | Propfind |
-                 Proppath | Purge | Put | Report | Search | Subscribe |
-                 Trace | Unlock | Unsubscribe
-
-
-  type chunk = String of string | Buffer of Buffer.buffer
-
-  val status_codes : (int * string) list
-
-  class type incoming_message = object
-    method http_version : string
-    method on_close : (unit -> unit) -> unit
-    method headers : (string * string) list
-    method raw_headers : string list
-  end
-
-  class type server_response = object
-    method on_close : (unit -> unit) -> unit
-    method on_finish : (unit -> unit) -> unit
-    method write_continue : unit
-
-    method write_head :
-      ?status_message:string -> status_code:int -> (string * string) list -> unit
-
-    (* method set_timeout *)
-    (* method status_code *)
-    (* method status_message *)
-    (* method set_header *)
-    (* method headers_sent *)
-    (* method send_date *)
-    (* method get_header *)
-    (* method remove_header *)
-    method write :
-      ?callback:(unit -> unit) -> ?encoding:string -> chunk -> unit
-    (* method add_trailers *)
-    method end_ :
-      ?data:chunk ->
-      ?encoding:string ->
-      ?callback:(unit -> unit) ->
-      unit ->
-      unit
-    (* method finished *)
-  end
-
-  class type server = object
-    method listen : port:int -> (unit -> unit) -> server
-    (* method on_request *)
-    (* method on_connection *)
-    (* method on_close *)
-    (* method on_check_continue *)
-    (* method on_connect *)
-    (* method on_upgrade *)
-    (* method on_client_error *)
-  end
-
-  val create_server : (incoming_message -> server_response -> unit) -> server
-
 end
 
 module Http = struct
@@ -273,15 +196,6 @@ module Http = struct
 
 end
 
-module type Fs = sig
-  type flag = Read | Write | Read_write | Append
-  type options = { encoding : string option; flag : flag option }
-
-  val read_file :
-    ?options:options -> path:string -> (Error.error -> string -> unit) -> unit
-
-end
-
 module Fs = struct
 
   type flag = Read | Write | Read_write | Append
@@ -310,4 +224,5 @@ module Fs = struct
       | {encoding = Some e; flag = None } ->
         m fs "readFile" [|i path; i e; i callback|]
       | _ -> ()
+
 end
