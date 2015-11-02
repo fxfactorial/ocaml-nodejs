@@ -16,9 +16,6 @@ all:
 	@ocamlfind ocamlc chat_server.ml -package $(pkgs) -linkpkg
 	@js_of_ocaml $(js_debug) a.out -o chat_server.js
 
-# clean:
-# 	@rm -f chat_server2.cmi chat_server2.cmo chat_server2.cmt a.out
-
 clean:
 	@rm -f chat_server.cmi chat_server.cmo chat_server.cmt a.out
 

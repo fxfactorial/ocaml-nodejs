@@ -19,37 +19,35 @@ dependencies and make file in the `examples` directory.
  3  open Nodejs
  4  
  5  let () =
- 6    let module H = (val require Http) in
- 7    let module Fs = (val require Fs) in
- 8    let io = Socket_io.require () in
- 9    let server =
-10      H.create_server begin fun incoming response ->
-11  
-12        Fs.read_file ~path:"./client.html" begin fun err data ->
-13          response#write_head ~status_code:200 [("Content-type", "text/html")];
-14          response#end_ ~data:(H.String data) ()
-15  
-16        end
-17      end
-18    in
-19    let app = server#listen ~port:8080 begin fun () ->
-20        Printf.sprintf
-21          "Started Server and Running node: %s" (new Nodejs.process#version)
-22        |> print_endline
-23      end
-24    in
-25  
-26    let io = io#listen app in
-27    io#sockets#on_connection begin fun socket ->
+ 6    let io = Socket_io.require () in
+ 7    let server =
+ 8      Http.create_server begin fun incoming response ->
+ 9  
+10        Fs.read_file ~path:"./client.html" begin fun err data ->
+11          response#write_head ~status_code:200 [("Content-type", "text/html")];
+12          response#end_ ~data:(Http.String data) ()
+13  
+14        end
+15      end
+16    in
+17    let app = server#listen ~port:8080 begin fun () ->
+18        Printf.sprintf
+19          "Started Server and Running node: %s" (new process#version)
+20        |> print_endline
+21      end
+22    in
+23  
+24    let io = io#listen app in
+25    io#sockets#on_connection begin fun socket ->
+26  
+27      socket#on "message_to_server" begin fun data ->
 28  
-29      socket#on "message_to_server" begin fun data ->
-30  
-31        io#sockets#emit
-32          ~event_name:"message_to_client"
-33          !!(object%js val message = data <!> "message" end)
-34  
-35      end
-36    end
+29        io#sockets#emit
+30          ~event_name:"message_to_client"
+31          !!(object%js val message = data <!> "message" end)
+32  
+33      end
+34    end
 ```
 
 The `<!>` infix operator is just a way to get a field of a JavaScript

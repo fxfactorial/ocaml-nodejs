@@ -21,11 +21,10 @@ let __dirname () =
 
 (** Call method of a JavaScript object *)
 let m = Js.Unsafe.meth_call
+
 (** Inject something as a JS object, be sure its Js.t already,
     functions seemingly exempt *)
 let i = Js.Unsafe.inject
-(** Get a property of a JavaScript object by name *)
-let g = Js.Unsafe.get
 
 (** Turn a JavaScript Object into a string *)
 let stringify o =
@@ -55,6 +54,9 @@ class process = object
   (* method on_unhandled_rejection *)
   (* method rejections_handled *)
 
+  method platform =
+    raw_process <!> "platform" |> Js.to_string
+
   method version =
     raw_process <!> "version" |> Js.to_string
 
@@ -78,6 +80,15 @@ end
 module Buffer = struct
   class buffer = object end
 end
+
+module type Events = sig
+  class type event = object end
+end
+
+module Events = struct
+  class event = object end
+end
+
 
 module type Http = sig
 
@@ -300,15 +311,3 @@ module Fs = struct
         m fs "readFile" [|i path; i e; i callback|]
       | _ -> ()
 end
-
-type 'a modules = Http : (module Http) modules
-                | Fs : (module Fs) modules
-                | Error : (module Error) modules
-                | Buffer : (module Buffer) modules
-
-(** Client abstraction of node's builtin modules *)
-let require : type a . a modules -> a = function
-  | Http -> (module Http : Http)
-  | Fs -> (module Fs : Fs)
-  | Error -> (module Error : Error)
-  | Buffer -> (module Buffer : Buffer)

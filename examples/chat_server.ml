@@ -3,22 +3,20 @@
 open Nodejs
 
 let () =
-  let module H = (val require Http) in
-  let module Fs = (val require Fs) in
   let io = Socket_io.require () in
   let server =
-    H.create_server begin fun incoming response ->
+    Http.create_server begin fun incoming response ->
 
       Fs.read_file ~path:"./client.html" begin fun err data ->
         response#write_head ~status_code:200 [("Content-type", "text/html")];
-        response#end_ ~data:(H.String data) ()
+        response#end_ ~data:(Http.String data) ()
 
       end
     end
   in
   let app = server#listen ~port:8080 begin fun () ->
       Printf.sprintf
-        "Started Server and Running node: %s" (new Nodejs.process#version)
+        "Started Server and Running node: %s" (new process#version)
       |> print_endline
     end
   in
