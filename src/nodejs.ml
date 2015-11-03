@@ -1,3 +1,4 @@
+(** Raw call for doing require("some_module") *)
 let require_module s =
   Js.Unsafe.fun_call
     (Js.Unsafe.js_expr "require")
@@ -6,6 +7,9 @@ let require_module s =
 (** Use for JavaScript Object literals *)
 let ( !! ) i = Js.Unsafe.inject i
 
+let ( !@ ) f = Js.wrap_callback f
+
+(** Get the field of a JavaScript Object *)
 let ( <!> ) obj field = Js.Unsafe.get obj field
 
 (** Same as console.log *)
@@ -73,7 +77,14 @@ end
 
 
 module Events = struct
-  class event = object end
+  class event = object
+
+    val raw_js = require_module "events"
+
+    (* Not sure how to type the listener function *)
+    (* method on_new_listener (f : (string -> Js.)) *)
+
+  end
 end
 
 module Http = struct
@@ -99,7 +110,7 @@ module Http = struct
       raw_js <!> "httpVersion" |> Js.to_string
 
     method on_close (f : (unit -> unit)) : unit =
-      m raw_js "on" [| to_js_str "close"; Js.Unsafe.inject f|]
+      m raw_js "on" [| to_js_str "close"; i !@f|]
 
     method headers =
       raw_js <!> "headers" |> to_json
@@ -117,10 +128,10 @@ module Http = struct
   class server_response raw_js = object
 
     method on_close (f : (unit -> unit)) : unit =
-      m raw_js "on" [| to_js_str "close"; Js.Unsafe.inject f|]
+      m raw_js "on" [| to_js_str "close"; i !@f|]
 
     method on_finish (f : (unit -> unit)) : unit =
-      m raw_js "on" [| to_js_str "finish"; Js.Unsafe.inject f|]
+      m raw_js "on" [| to_js_str "finish"; i !@f|]
 
     method write_continue : unit =
       m raw_js "writeContinue" [||]
@@ -173,7 +184,7 @@ module Http = struct
   class server handler = object(self)
 
     val raw_js_server =
-      m (require_module "http") "createServer" [|i (Js.wrap_callback handler)|]
+      m (require_module "http") "createServer" [|i !@handler|]
 
     (* method on_request *)
     (* method on_connection *)
@@ -184,7 +195,7 @@ module Http = struct
     (* method on_client_error *)
 
     method listen ~port:(port : int) (handler : (unit -> unit)) : server =
-      m raw_js_server "listen" [|i port; i (Js.wrap_callback handler)|]
+      m raw_js_server "listen" [|i port; i !@ handler|]
 
   end
 
@@ -213,7 +224,7 @@ module Fs = struct
       (callback : (Error.error -> string -> unit)) =
     let fs = require_module "fs" in
     let path = Js.string path in
-    let callback = Js.wrap_callback callback in
+    let callback = !@callback in
     (* Things given to inject need to already be Js.t objects *)
     match options with
     | None ->
