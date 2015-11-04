@@ -77,6 +77,7 @@ end
 
 
 module Events = struct
+
   class event = object
 
     val raw_js = require_module "events"
@@ -85,6 +86,80 @@ module Events = struct
     (* method on_new_listener (f : (string -> Js.)) *)
 
   end
+end
+
+module Stream = struct
+
+    let raw_js = require_module "stream"
+
+
+    class readable raw_js = object
+      (* method on_readable *)
+      (* method on_data *)
+      (* method on_end *)
+      (* method on_read *)
+
+      (* Make this better in its return value, harder to type *)
+      method read = function
+        | None -> (m raw_js "read" [||]) |> Js.to_string
+        | Some (j : int) -> (m raw_js "read" [|i j|]) |> Js.to_string
+
+    end
+
+end
+
+module Child_process = struct
+
+  type child_proc = { pid : int;
+                      env : string list; }
+                      (* env : (string * string) list; } *)
+
+  class child_process = object
+
+    val raw_js = require_module "child_process"
+
+    method on_error (f: (Error.error -> unit)) : unit =
+      m raw_js "on" [|i (Js.string "error"); i !@f|]
+
+    method on_exit (f : (int -> string -> unit)) : unit =
+      m raw_js "on" [|i (Js.string "exit"); i !@f|]
+
+    method on_close (f : (int -> string -> unit)) : unit =
+      m raw_js "on" [|i (Js.string "close"); i !@f|]
+
+    method on_disconnect (f : (unit -> unit)) : unit =
+      m raw_js "on" [|i (Js.string "disconnect"); i !@f|]
+
+    method on_message (f : (Js.Unsafe.any -> Js.Unsafe.any-> unit)) : unit =
+      m raw_js "on" [|i (Js.string "message"); i !@f|]
+
+    method stdin = new Stream.readable (raw_js <!> "stdin")
+
+    method stdout = new Stream.readable (raw_js <!> "stdout")
+
+    method stderr = new Stream.readable (raw_js <!> "stderr")
+
+    method pid : int = raw_js <!> "pid"
+
+    method connected : bool = raw_js <!> "connected"
+
+    method kill signal : unit =
+      m raw_js "kill" [|i (Js.string signal)|]
+
+    method spawn_sync (* ?opts *) cmd args : child_proc =
+      let handle =
+        [|i (Js.string cmd);
+          i (List.map Js.string args |> Array.of_list |> Js.array)|]
+        |> m raw_js "spawnSync"
+      in
+      let env =
+        (handle <!> "envPairs") |> Js.to_array |> Array.map Js.to_string
+        |> Array.to_list
+      in
+      {pid = handle <!> "pid"; env }
+
+  end
+
 end
 
 module Http = struct
