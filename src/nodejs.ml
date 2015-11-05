@@ -619,3 +619,28 @@ module URL = struct
   end
 
 end
+
+module V8 = struct
+
+  type stats = { total_heap_size: int;
+                 total_heap_size_executable: int;
+                 total_physical_size : int;
+                 total_available_size : int;
+                 used_heap_size : int;
+                 heap_size_limit : int; }
+
+  let raw_js = require_module "v8"
+
+  let heap_statistics () =
+    let handle = m raw_js "getHeapStatistics" [||] in
+    { total_heap_size = handle <!> "total_heap_size";
+      total_heap_size_executable = handle <!> "total_heap_size_executable";
+      total_physical_size = handle <!> "total_physical_size";
+      total_available_size = handle <!> "total_available_size";
+      used_heap_size = handle <!> "used_heap_size";
+      heap_size_limit = handle <!> "heap_size_limit"; }
+
+  let set_v8_flag s : unit =
+    m raw_js "setFlagsFromString" [|to_js_str s|]
+
+end
