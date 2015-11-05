@@ -47,7 +47,9 @@ let obj_of_alist a_l =
 let to_string_list g =
   g |> Js.str_array |> Js.to_array |> Array.map Js.to_string |> Array.to_list
 
-let constants = require_module "constants" |> to_json
+(* This will crap out at the moment because of int overflow on some
+   field *)
+(* let constants = require_module "constants" |> to_json *)
 
 type memory_usage = { rss : int; heap_total : int; heap_used : int; }
 
@@ -190,10 +192,10 @@ module Buffer = struct
 
     method write ?(offset=0) ?(encoding=Utf_8) ?length (s : string) : int =
       (match length with
-      | None ->
-        [|to_js_str s; i offset; i (self#length - offset); to_js_str (string_of_encoding encoding)|]
-      | Some (j : int) ->
-        [|to_js_str s; i offset; i j; to_js_str (string_of_encoding encoding)|])
+       | None ->
+         [|to_js_str s; i offset; i (self#length - offset); to_js_str (string_of_encoding encoding)|]
+       | Some (j : int) ->
+         [|to_js_str s; i offset; i j; to_js_str (string_of_encoding encoding)|])
       |> m raw_js "write"
 
     method to_string ?(encoding=Utf_8) ?(start=0) ?end_ () : string =
@@ -248,21 +250,21 @@ end
 
 module Stream = struct
 
-    let raw_js = require_module "stream"
+  let raw_js = require_module "stream"
 
 
-    class readable raw_js = object
-      (* method on_readable *)
-      (* method on_data *)
-      (* method on_end *)
-      (* method on_read *)
+  class readable raw_js = object
+    (* method on_readable *)
+    (* method on_data *)
+    (* method on_end *)
+    (* method on_read *)
 
-      (* Make this better in its return value, harder to type *)
-      method read = function
-        | None -> (m raw_js "read" [||]) |> Js.to_string
-        | Some (j : int) -> (m raw_js "read" [|i j|]) |> Js.to_string
+    (* Make this better in its return value, harder to type *)
+    method read = function
+      | None -> (m raw_js "read" [||]) |> Js.to_string
+      | Some (j : int) -> (m raw_js "read" [|i j|]) |> Js.to_string
 
-    end
+  end
 
 end
 
@@ -270,7 +272,7 @@ module Child_process = struct
 
   type child_proc = { pid : int;
                       env : string list; }
-                      (* env : (string * string) list; } *)
+  (* env : (string * string) list; } *)
 
   class child_process = object
 
@@ -323,23 +325,14 @@ end
 module Crypto = struct
 
   type flag = Rsa | Dsa | Dh | Rand | Ecdh | Ecdsa | Ciphers | Digests | Store
-             | Pkey_meth | Pkey_asn1_meth | All | None
+            | Pkey_meth | Pkey_asn1_meth | All | None
 
-  type engine = Id of string | Path of string
-  (* ENGINE_METHOD_DSA: 2, *)
-  (* ENGINE_METHOD_DH: 4, *)
-  (* ENGINE_METHOD_RAND: 8, *)
-  (* ENGINE_METHOD_ECDH: 16, *)
-  (* ENGINE_METHOD_ECDSA: 32, *)
-  (* ENGINE_METHOD_CIPHERS: 64, *)
-  (* ENGINE_METHOD_DIGESTS: 128, *)
-  (* ENGINE_METHOD_STORE: 256, *)
-  (* ENGINE_METHOD_PKEY_METHS: 512, *)
-  (* ENGINE_METHOD_PKEY_ASN1_METHS: 1024, *)
-  (* ENGINE_METHOD_ALL: 65535, *)
-  (* ENGINE_METHOD_NONE: 0, *)
-  (* let string_of_flag = function *)
-  (*   | Rsa -> "" *)
+  type engine = Id of int | Path of string
+
+  class hmac raw_js = object
+
+  end
+
   class crypto = object
 
     val raw_js = require_module "crypto"
@@ -347,7 +340,13 @@ module Crypto = struct
     (* method set_engine ?(flag=All) e : unit = *)
     (*   match e with *)
     (*   | Id j -> m raw_js "setEngine" [|to_js_str j; to_js_str (string_of_flag flag)|] *)
-      (* | Path s -> m raw_js "setEngine" [||] *)
+    (* | Path s -> m raw_js "setEngine" [||] *)
+
+    method get_ciphers = m raw_js "getCiphers" [||] |> to_string_list
+
+    method get_hashes = m raw_js "getHashes" [||] |> to_string_list
+
+    method get_curves = m raw_js "getCurves" [||] |> to_string_list
 
   end
 
@@ -434,10 +433,10 @@ module Http = struct
     (* method add_trailers *)
 
     method end_
-      ?(data : chunk option)
-      ?(encoding: string option)
-      ?(callback : (unit -> unit) option)
-      ()
+        ?(data : chunk option)
+        ?(encoding: string option)
+        ?(callback : (unit -> unit) option)
+        ()
       : unit =
       match data with
       | Some (String s) ->
@@ -502,5 +501,76 @@ module Fs = struct
       | {encoding = Some e; flag = None } ->
         m fs "readFile" [|i path; i e; i callback|]
       | _ -> ()
+
+end
+
+module OS = struct
+
+  type endian = Big_endian | Little_endian
+
+  type times = { user: int; nice : int; sys : int; idle : int; irq : int; }
+  type cpu = { model : string; speed : int; times : times; }
+
+  type ip_family = Ip4 | Ip6
+
+  type i_desc = { address : string;
+                  netmask : string;
+                  family : ip_family;
+                  mac: string;
+                  internal : bool; }
+
+  type interface = { interface_name : string; interface_desc : i_desc list; }
+
+  class os = object
+
+    val raw_js = require_module "os"
+
+    method tmpdir = m raw_js "tmpdir" [||] |> Js.to_string
+
+    method homedir = m raw_js "homedir" [||] |> Js.to_string
+
+    method endianness =
+      match m raw_js "endianness" [||] |> Js.to_string with
+      | "BE" -> Big_endian
+      | "LE" -> Little_endian
+      | _ -> assert false
+
+    method hostname = m raw_js "hostname" [||] |> Js.to_string
+
+    method os_type = m raw_js "type" [||] |> Js.to_string
+
+    method platform = m raw_js "platform" [||] |> Js.to_string
+
+    method arch = m raw_js "arch" [||] |> Js.to_string
+
+    method release = m raw_js "release" [||] |> Js.to_string
+
+    method uptime : int = m raw_js "uptime" [||]
+
+    method loadavg : int list =
+      m raw_js "loadavg" [||] |> Js.to_array |> Array.to_list
+
+    method total_memory : int = m raw_js "totalmem" [||]
+
+    method free_memory : int = m raw_js "freemem" [||]
+
+    (* method network_interfaces  *)
+    method cpus : cpu list =
+      m raw_js "cpus" [||]
+      |> Js.to_array |> Array.map begin fun o ->
+        let t = o <!> "times" in
+        {model = o <!> "model";
+         speed = o <!> "speed";
+         times = {user = t <!> "user" ;
+                  nice = t <!> "nice";
+                  sys = t <!> "sys";
+                  idle = t <!> "idle";
+                  irq = t <!> "irq"; }}
+      end
+      |> Array.to_list
+
+    method eol = raw_js <!> "EOL" |> Js.to_string
+
+  end
 
 end
