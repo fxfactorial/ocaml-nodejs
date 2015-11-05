@@ -4,9 +4,6 @@ let require_module s =
     (Js.Unsafe.js_expr "require")
     [|Js.Unsafe.inject (Js.string s)|]
 
-(** Use for JavaScript Object literals *)
-let ( !! ) i = Js.Unsafe.inject i
-
 let ( !@ ) f = Js.wrap_callback f
 
 (** Get the field of a JavaScript Object *)
@@ -44,35 +41,122 @@ let to_json obj =
 (** Create a JavaScript Object out of an alist *)
 let obj_of_alist a_l =
   List.map (fun (key, value) -> (key, Js.Unsafe.inject value)) a_l
-  |> Array.of_list
-  |> Js.Unsafe.obj
+  |> Array.of_list |> Js.Unsafe.obj
+
+(** Turn JavaScript string array into OCaml list of string *)
+let to_string_list g =
+  g |> Js.str_array |> Js.to_array |> Array.map Js.to_string |> Array.to_list
+
+type memory_usage = { rss : int; heap_total : int; heap_used : int; }
 
 class process = object
 
-  val raw_process = Js.Unsafe.variable "process"
+  val raw_js = Js.Unsafe.variable "process"
 
-  (* method on_exit *)
-  (* method on_message *)
-  (* method on_before_exit *)
-  (* method on_uncaught_exception *)
+  method on_exit (f : (int -> unit)) : unit =
+    m raw_js "on" [|i (Js.string "exit"); i !@f|]
+  (* Type this stronger later *)
+  method on_message (f : (Js.Unsafe.any -> Js.Unsafe.any -> unit)) : unit =
+    m raw_js "on" [|i (Js.string "message"); i !@f|]
+
+  method on_before_exit (f : (unit -> unit)) : unit =
+    m raw_js "on" [|i (Js.string "beforeExit"); i !@f|]
+
+  (* method on_uncaught_exception (f : ) *)
   (* method on_unhandled_rejection *)
   (* method rejections_handled *)
 
-  method platform =
-    raw_process <!> "platform" |> Js.to_string
+  method platform = raw_js <!> "platform" |> Js.to_string
 
-  method version =
-    raw_process <!> "version" |> Js.to_string
+  method version = raw_js <!> "version" |> Js.to_string
+
+  method argv = raw_js <!> "argv" |> to_string_list
+
+  method exec_path = raw_js <!> "execPath" |> Js.to_string
+
+  method exec_argv = raw_js <!> "execArgv" |> to_string_list
+
+  method abort : unit = m raw_js "abort" [||]
+
+  method chdir s : unit = m raw_js "chdir" [|i (Js.string s)|]
+
+  method cwd : string = m raw_js "cwd" [||] |> Js.to_string
+
+  method exit_ (j : int) : unit = m raw_js "exit" [|i j|]
+
+  method exit_code : int = raw_js <!> "exitCode"
+
+  method get_gid : int = m raw_js "getgid" [||]
+
+  method get_e_gid : int = m raw_js "getegid" [||]
+
+  method set_gid (j : int) : unit = m raw_js "setgid" [|i j|]
+
+  method set_e_gid (j : int) : unit = m raw_js "setegid" [|i j|]
+
+  method get_uid : int = m raw_js "getuid" [||]
+
+  method get_e_uid : int = m raw_js "geteuid" [||]
+
+  method set_uid (j : int) : unit = m raw_js "setuid" [|i j|]
+
+  method set_e_uid (j : int) : unit = m raw_js "seteuid" [|i j|]
+
+  method get_groups : int list =
+    m raw_js "getgroups" [||] |> Js.to_array |> Array.to_list
+
+  (* method set_groups () *)
+
+  method versions = raw_js <!> "versions" |> to_json
+
+  method config = raw_js <!> "config" |> to_json
+
+  method release = raw_js <!> "release" |> to_json
+
+  method kill ?signal (j : int) : unit =
+    match signal with
+    | None -> m raw_js "kill" [|i j|]
+    | Some (g : string) -> m raw_js "kill" [|i j|]
+
+  method title = raw_js <!> "title" |> Js.to_string
+
+  method set_title (s : string) = raw_js##.title := (Js.string s)
+
+  method arch = raw_js <!> "platform" |> Js.to_string
+
+  method memory_usage =
+    let handle = m raw_js "memoryUsage" [||] in
+    { rss = handle <!> "rss";
+      heap_total = handle <!> "heapTotal";
+      heap_used = handle <!> "heapUsed"; }
+
+  (* method next_tick (f : (unit -> unit)) *)
+
+  method umask mask : unit =
+    match mask with
+    | None -> m raw_js "umask" [||]
+    | Some (j : int) -> m raw_js "umask" [|i j|]
+
+  method uptime : int = m raw_js "uptime" [||]
+
+  (* method hrtime : (int * int) = *)
+  (* method send  *)
+
+  method disconnect : unit = m raw_js "disconnect" [||]
 
 end
 
 module Error = struct
+
   class error = object end
+
 end
 
 
 module Buffer = struct
+
   class buffer = object end
+
 end
 
 
@@ -153,8 +237,8 @@ module Child_process = struct
         |> m raw_js "spawnSync"
       in
       let env =
-        (handle <!> "envPairs") |> Js.to_array |> Array.map Js.to_string
-        |> Array.to_list
+        (handle <!> "envPairs")
+        |> Js.to_array |> Array.map Js.to_string |> Array.to_list
       in
       {pid = handle <!> "pid"; env }
 
