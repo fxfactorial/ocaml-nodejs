@@ -47,6 +47,8 @@ let obj_of_alist a_l =
 let to_string_list g =
   g |> Js.str_array |> Js.to_array |> Array.map Js.to_string |> Array.to_list
 
+let constants = require_module "constants" |> to_json
+
 type memory_usage = { rss : int; heap_total : int; heap_used : int; }
 
 class process = object
@@ -148,14 +150,86 @@ end
 
 module Error = struct
 
-  class error = object end
+  class error  = object
+
+
+  end
 
 end
 
 
 module Buffer = struct
 
-  class buffer = object end
+  type encoding = Ascii | Utf_8 | Utf_16_le
+                | Ucs_2 | Base_64 | Binary | Hex
+
+  type buffer_init = Size of int
+                   | Array of int
+                   | String of (string * encoding)
+
+  let string_of_encoding = function
+    | Ascii -> "ascii"
+    | Utf_8 -> "utf8"
+    | Utf_16_le -> "utf16le"
+    | Ucs_2 -> "ucs2"
+    | Base_64 -> "base64"
+    | Binary -> "binary"
+    | Hex -> "hex"
+
+  let raw_js = Js.Unsafe.variable "Buffer"
+
+  class buffer raw_js = object(self)
+
+    method raw_buffer : Js.Unsafe.any = raw_js
+
+    (** The size of the buffer in bytes. Note that this is not
+        necessarily the size of the contents. length refers to the amount
+        of memory allocated for the buffer object. It does not change when
+        the contents of the buffer are changed.*)
+    method length : int = raw_js <!> "length"
+
+    method write ?(offset=0) ?(encoding=Utf_8) ?length (s : string) : int =
+      (match length with
+      | None ->
+        [|to_js_str s; i offset; i (self#length - offset); to_js_str (string_of_encoding encoding)|]
+      | Some (j : int) ->
+        [|to_js_str s; i offset; i j; to_js_str (string_of_encoding encoding)|])
+      |> m raw_js "write"
+
+    method to_string ?(encoding=Utf_8) ?(start=0) ?end_ () : string =
+      (match end_ with
+       | None ->
+         [|to_js_str (string_of_encoding encoding); i start; i self#length|]
+       | Some (j : int) ->
+         [| to_js_str (string_of_encoding encoding); i start; i j|])
+      |> m raw_js "toString" |> Js.to_string
+
+    (** Returns a JSON-representation of the Buffer
+        instance. JSON.stringify implicitly calls this function when
+        stringifying a Buffer instance. *)
+    method to_json =
+      m raw_js "toJSON" [||] |> to_json
+
+  end
+
+  let new_buffer = function
+    | Size i ->
+      Js.Unsafe.js_expr (Printf.sprintf "new Buffer(%d)" i)
+    | String (data, encoding) ->
+      Js.Unsafe.js_expr (Printf.sprintf "new Buffer(%s, %s)" data (string_of_encoding encoding))
+    (* Come back to this *)
+    | _ -> assert false
+  (* let copy_buffer (b : buffer) = Js.Unsafe. *)
+  (* let new_buffer *)
+
+  let is_encoding e : bool = m raw_js "isEncoding" [|to_js_str e|]
+
+  let is_buffer (o : Js.Unsafe.any) : bool = m raw_js "isBuffer" [|i o|]
+
+  let byte_length ?(encoding=Utf_8) s : int =
+    m raw_js "byteLength" [|to_js_str s;
+                            to_js_str (string_of_encoding encoding)|]
+
 
 end
 
@@ -243,6 +317,40 @@ module Child_process = struct
       {pid = handle <!> "pid"; env }
 
   end
+
+end
+
+module Crypto = struct
+
+  type flag = Rsa | Dsa | Dh | Rand | Ecdh | Ecdsa | Ciphers | Digests | Store
+             | Pkey_meth | Pkey_asn1_meth | All | None
+
+  type engine = Id of string | Path of string
+  (* ENGINE_METHOD_DSA: 2, *)
+  (* ENGINE_METHOD_DH: 4, *)
+  (* ENGINE_METHOD_RAND: 8, *)
+  (* ENGINE_METHOD_ECDH: 16, *)
+  (* ENGINE_METHOD_ECDSA: 32, *)
+  (* ENGINE_METHOD_CIPHERS: 64, *)
+  (* ENGINE_METHOD_DIGESTS: 128, *)
+  (* ENGINE_METHOD_STORE: 256, *)
+  (* ENGINE_METHOD_PKEY_METHS: 512, *)
+  (* ENGINE_METHOD_PKEY_ASN1_METHS: 1024, *)
+  (* ENGINE_METHOD_ALL: 65535, *)
+  (* ENGINE_METHOD_NONE: 0, *)
+  (* let string_of_flag = function *)
+  (*   | Rsa -> "" *)
+  class crypto = object
+
+    val raw_js = require_module "crypto"
+
+    (* method set_engine ?(flag=All) e : unit = *)
+    (*   match e with *)
+    (*   | Id j -> m raw_js "setEngine" [|to_js_str j; to_js_str (string_of_flag flag)|] *)
+      (* | Path s -> m raw_js "setEngine" [||] *)
+
+  end
+
 
 end
 
