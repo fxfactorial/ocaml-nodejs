@@ -574,3 +574,48 @@ module OS = struct
   end
 
 end
+
+module URL = struct
+
+  type url_parsed = { protocol : string option;
+                      slashes: bool option;
+                      auth: string option;
+                      host: string option;
+                      port: int option;
+                      hostname: string option;
+                      hash: string option;
+                      search: string option;
+                      query: string option;
+                      pathname: string;
+                      path: string;
+                      href: string; }
+
+  class url = object
+    val raw_js = require_module "url"
+
+    method parse (s : string) =
+      let handle = m raw_js "parse" [|to_js_str s|] in
+      let field name =
+        if handle <!> name = Js.null then None else Some handle <!> name
+      in
+      {protocol = field "protocol";
+       slashes = field "slashes";
+       auth = field "auth";
+       host = field "host";
+       port = field "port";
+       hostname = field "hostname";
+       hash = field "hash";
+       search = field "search";
+       query = field "query";
+       pathname = handle <!> "pathname";
+       path = handle <!> "path";
+       href = handle <!> "href";
+      }
+
+    (* method format = *)
+    method resolve from to_ : string =
+      m raw_js "resolve" [|to_js_str from; to_js_str to_|] |> Js.to_string
+
+  end
+
+end
