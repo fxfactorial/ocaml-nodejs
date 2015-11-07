@@ -291,80 +291,6 @@ module Stream = struct
 
 end
 
-module Child_process = struct
-
-  type child_proc = { pid : int;
-                      env : string list; }
-  (* env : (string * string) list; } *)
-
-  type exec_opts = { cwd : string;
-                     env : (string * string) list;
-                     encoding : encoding;
-                     shell : string;
-                     timeout: int;
-                     max_buffer_size : int;
-                     kill_signal: string;
-                     uid : int;
-                     gid : int; }
-
-  let exec
-      ?opts
-      ?f:(f : (Error.error -> Buffer.buffer -> Buffer.buffer) option)
-      (* Shouldn't be unit *)
-      cmd : unit =
-    let handle = require_module "child_process" in
-    match (opts, f) with
-    | (None, None) -> m handle "exec" [|to_js_str cmd|] |> ignore
-    (* TODO Implement this *)
-    | _ -> assert false
-
-  class child_process = object
-
-    val raw_js = require_module "child_process"
-
-    method on_error (f: (Error.error -> unit)) : unit =
-      m raw_js "on" [|i (Js.string "error"); i !@f|]
-
-    method on_exit (f : (int -> string -> unit)) : unit =
-      m raw_js "on" [|i (Js.string "exit"); i !@f|]
-
-    method on_close (f : (int -> string -> unit)) : unit =
-      m raw_js "on" [|i (Js.string "close"); i !@f|]
-
-    method on_disconnect (f : (unit -> unit)) : unit =
-      m raw_js "on" [|i (Js.string "disconnect"); i !@f|]
-
-    method on_message (f : (Js.Unsafe.any -> Js.Unsafe.any-> unit)) : unit =
-      m raw_js "on" [|i (Js.string "message"); i !@f|]
-
-    method stdin = new Stream.readable (raw_js <!> "stdin")
-
-    method stdout = new Stream.readable (raw_js <!> "stdout")
-
-    method stderr = new Stream.readable (raw_js <!> "stderr")
-
-    method pid : int = raw_js <!> "pid"
-
-    method connected : bool = raw_js <!> "connected"
-
-    method kill signal : unit =
-      m raw_js "kill" [|i (Js.string signal)|]
-
-    method spawn_sync (* ?opts *) cmd args : child_proc =
-      let handle =
-        [|i (Js.string cmd);
-          i (List.map Js.string args |> Array.of_list |> Js.array)|]
-        |> m raw_js "spawnSync"
-      in
-      let env =
-        (handle <!> "envPairs")
-        |> Js.to_array |> Array.map Js.to_string |> Array.to_list
-      in
-      {pid = handle <!> "pid"; env }
-
-  end
-
-end
 
 module Crypto = struct
 
@@ -439,6 +365,92 @@ module Net = struct
 
 end
 
+type str_or_buff = String of string | Buffer of Buffer.buffer
+
+module Child_process = struct
+
+  type child_proc = { pid : int;
+                      env : string list; }
+  (* env : (string * string) list; } *)
+
+  type exec_opts = { cwd : string;
+                     env : (string * string) list;
+                     encoding : encoding;
+                     shell : string;
+                     timeout: int;
+                     max_buffer_size : int;
+                     kill_signal: string;
+                     uid : int;
+                     gid : int; }
+
+  let exec_async
+      ?opts
+      ?f:(f : (Error.error -> Buffer.buffer -> Buffer.buffer) option)
+      (* Shouldn't be unit *)
+      cmd : unit =
+    let handle = require_module "child_process" in
+    match (opts, f) with
+    | (None, None) -> m handle "exec" [|to_js_str cmd|] |> ignore
+    (* TODO Implement this *)
+    | _ -> assert false
+
+  type exec_sync_opts = { cwd : string;
+                          input : str_or_buff ; }
+
+  let exec_sync ?opts cmd =
+    let handle = require_module "child_process" in
+    match opts with
+    | None -> m handle "execSync" [|to_js_str cmd|] |> Js.to_string
+    (* TODO Implement this *)
+    | _ -> assert false
+
+  class child_process = object
+
+    val raw_js = require_module "child_process"
+
+    method on_error (f: (Error.error -> unit)) : unit =
+      m raw_js "on" [|i (Js.string "error"); i !@f|]
+
+    method on_exit (f : (int -> string -> unit)) : unit =
+      m raw_js "on" [|i (Js.string "exit"); i !@f|]
+
+    method on_close (f : (int -> string -> unit)) : unit =
+      m raw_js "on" [|i (Js.string "close"); i !@f|]
+
+    method on_disconnect (f : (unit -> unit)) : unit =
+      m raw_js "on" [|i (Js.string "disconnect"); i !@f|]
+
+    method on_message (f : (Js.Unsafe.any -> Js.Unsafe.any-> unit)) : unit =
+      m raw_js "on" [|i (Js.string "message"); i !@f|]
+
+    method stdin = new Stream.readable (raw_js <!> "stdin")
+
+    method stdout = new Stream.readable (raw_js <!> "stdout")
+
+    method stderr = new Stream.readable (raw_js <!> "stderr")
+
+    method pid : int = raw_js <!> "pid"
+
+    method connected : bool = raw_js <!> "connected"
+
+    method kill signal : unit =
+      m raw_js "kill" [|i (Js.string signal)|]
+
+    method spawn_sync (* ?opts *) cmd args : child_proc =
+      let handle =
+        [|i (Js.string cmd);
+          i (List.map Js.string args |> Array.of_list |> Js.array)|]
+        |> m raw_js "spawnSync"
+      in
+      let env =
+        (handle <!> "envPairs")
+        |> Js.to_array |> Array.map Js.to_string |> Array.to_list
+      in
+      {pid = handle <!> "pid"; env }
+
+  end
+
+end
 
 module Http = struct
 
@@ -448,7 +460,6 @@ module Http = struct
                  Proppath | Purge | Put | Report | Search | Subscribe |
                  Trace | Unlock | Unsubscribe
 
-  type chunk = String of string | Buffer of Buffer.buffer
 
   let status_codes =
     (require_module "http") <!> "STATUS_CODES" |> to_json
