@@ -25,7 +25,7 @@ dependencies and make file in the `examples` directory.
  9  
 10        Fs.read_file ~path:"./client.html" begin fun err data ->
 11          response#write_head ~status_code:200 [("Content-type", "text/html")];
-12          response#end_ ~data:(Http.String data) ()
+12          response#end_ ~data:(String data) ()
 13  
 14        end
 15      end

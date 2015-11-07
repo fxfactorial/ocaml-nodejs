@@ -31,7 +31,7 @@ let () =
 
       Fs.read_file ~path:"./client.html" begin fun err data ->
         response#write_head ~status_code:200 [("Content-type", "text/html")];
-        response#end_ ~data:(Http.String data) ()
+        response#end_ ~data:(String data) ()
 
       end
     end
