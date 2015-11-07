@@ -61,6 +61,13 @@ type encoding = Ascii | Utf_8 | Utf_16_le
 
 type platform = Darwin | Freebsd | Linux | Sunos | Win32
 
+let string_of_platform = function
+  | Darwin -> "darwin"
+  | Freebsd -> "freebsd"
+  | Linux -> "linux"
+  | Sunos -> "sunos"
+  | Win32 -> "win32"
+
 let string_of_encoding = function
   | Ascii -> "ascii"
   | Utf_8 -> "utf8"
