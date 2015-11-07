@@ -5,6 +5,7 @@ let require_module s =
     [|Js.Unsafe.inject (Js.string s)|]
 
 let ( !@ ) f = Js.wrap_callback f
+let ( !! ) o = Js.Unsafe.inject o
 
 (** Get the field of a JavaScript Object *)
 let ( <!> ) obj field = Js.Unsafe.get obj field
@@ -52,6 +53,24 @@ let to_string_list g =
 (* let constants = require_module "constants" |> to_json *)
 
 type memory_usage = { rss : int; heap_total : int; heap_used : int; }
+
+type ip_family = Ip4 | Ip6
+
+type encoding = Ascii | Utf_8 | Utf_16_le
+              | Ucs_2 | Base_64 | Binary | Hex
+
+let string_of_encoding = function
+  | Ascii -> "ascii"
+  | Utf_8 -> "utf8"
+  | Utf_16_le -> "utf16le"
+  | Ucs_2 -> "ucs2"
+  | Base_64 -> "base64"
+  | Binary -> "binary"
+  | Hex -> "hex"
+
+(* TODO, need to do similar thing for signals *)
+(* type signals = Sigint *)
+(* let string_of_signal = function  *)
 
 class process = object
 
@@ -162,21 +181,10 @@ end
 
 module Buffer = struct
 
-  type encoding = Ascii | Utf_8 | Utf_16_le
-                | Ucs_2 | Base_64 | Binary | Hex
 
   type buffer_init = Size of int
                    | Array of int
                    | String of (string * encoding)
-
-  let string_of_encoding = function
-    | Ascii -> "ascii"
-    | Utf_8 -> "utf8"
-    | Utf_16_le -> "utf16le"
-    | Ucs_2 -> "ucs2"
-    | Base_64 -> "base64"
-    | Binary -> "binary"
-    | Hex -> "hex"
 
   let raw_js = Js.Unsafe.variable "Buffer"
 
@@ -274,6 +282,26 @@ module Child_process = struct
                       env : string list; }
   (* env : (string * string) list; } *)
 
+  type exec_opts = { cwd : string;
+                     env : (string * string) list;
+                     encoding : encoding;
+                     shell : string;
+                     timeout: int;
+                     max_buffer_size : int;
+                     kill_signal: string;
+                     uid : int;
+                     gid : int; }
+
+  let exec
+      ?opts
+      ?f:(f : (Error.error -> Buffer.buffer -> Buffer.buffer) option)
+      cmd =
+    let handle = require_module "child_process" in
+    match (opts, f) with
+    | (None, None) -> m handle "exec" [|to_js_str cmd|]
+    (* TODO Implement this *)
+    | _ -> assert false
+
   class child_process = object
 
     val raw_js = require_module "child_process"
@@ -352,6 +380,49 @@ module Crypto = struct
 
 
 end
+
+module DNS = struct
+
+  (* let lookup () =  *)
+
+end
+
+
+module Net = struct
+
+  (* type socket_opts = { file_descriptor:
+                          allow_half_open : bool;
+                          readable : bool;
+                          writable : bool;
+     } *)
+
+  type tcp_opts = { port : int;
+                    host : string option ;
+                    local_address: string;
+                    local_port : string;
+                    family : int option;
+                    lookup : (unit -> unit) option; }
+
+  let int_of_ip_family = function
+    | Ip4 -> 4
+    | Ip6 -> 6
+
+  class socket = object
+
+
+  end
+
+  class net = object
+
+    val raw_js = require_module "net"
+
+    (* method create_server *)
+
+  end
+
+
+end
+
 
 module Http = struct
 
@@ -433,7 +504,7 @@ module Http = struct
     (* method add_trailers *)
 
     method end_
-        ?(data : chunk option)
+        ?data
         ?(encoding: string option)
         ?(callback : (unit -> unit) option)
         ()
@@ -452,7 +523,7 @@ module Http = struct
     val raw_js_server =
       m (require_module "http") "createServer" [|i !@handler|]
 
-    (* method on_request *)
+    (* method on_request (f : ()) *)
     (* method on_connection *)
     (* method on_close *)
     (* method on_check_continue *)
@@ -470,6 +541,20 @@ module Http = struct
       handler (new incoming_message incoming_msg) (new server_response response)
     in
     new server wrapped_handler
+
+  class client_request raw_js = object
+
+    method on_response (f : (incoming_message -> unit)) : unit =
+      let wrapped = fun incoming -> f (new incoming_message incoming) in
+      m raw_js "on" [|to_js_str "response"; i !@wrapped|]
+
+    (* What is the type of socket *)
+    (* method on_socket (f : (so)) *)
+
+    method on_connect
+        (f : (server_response -> Net.socket -> Js.Unsafe.any)) : unit =
+      ()
+  end
 
 end
 
@@ -511,7 +596,6 @@ module OS = struct
   type times = { user: int; nice : int; sys : int; idle : int; irq : int; }
   type cpu = { model : string; speed : int; times : times; }
 
-  type ip_family = Ip4 | Ip6
 
   type i_desc = { address : string;
                   netmask : string;
@@ -644,3 +728,33 @@ module V8 = struct
     m raw_js "setFlagsFromString" [|to_js_str s|]
 
 end
+
+module Zlib = struct
+
+  class zlib = object
+
+    val raw_js = require_module "zlib"
+
+    (* method create_gzip *)
+
+    (* method create_gunzip *)
+
+    (* method create_deflate *)
+
+    (* method create_inflate *)
+
+    (* method create_deflate_raw *)
+
+    (* method create_inflate_raw *)
+
+    (* method create_unzip *)
+
+    (* method deflate_sync *)
+
+    (* method deflate_async *)
+
+    (* method  *)
+  end
+
+end
+
