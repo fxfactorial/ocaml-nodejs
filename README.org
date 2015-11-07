@@ -61,6 +61,35 @@ Object and the ~!!~ prefix operator is a way lift the js_of_ocaml
 object literal as a JavaScript object. Notice the high level nature of
 the code utilizing OCaml's features like named parameters.
 
+The code assumes that ~client.html~ is in the same directory, it looks
+like this:
+
+#+BEGIN_SRC html -n
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.socket.io/socket.io-1.3.7.js"></script>
+<script type="text/javascript">
+var socketio = io.connect("http://localhost:8080");
+socketio.on("message_to_client", function(data) {
+document.getElementById("chatlog").innerHTML = ("<hr/>" + data['message'] +
+document.getElementById("chatlog").innerHTML);
+});
+
+function sendMessage() {
+  var msg = document.getElementById("message_input").value;
+  socketio.emit("message_to_server", { message : msg});
+}
+</script>
+</head>
+<body>
+	<input type="text" id="message_input"/>
+	<button onclick="sendMessage()">send</button>
+	<div id="chatlog"></div>
+</body>
+</html>
+#+END_SRC
+
 * Steps to get the example working
 I assume that you have ~opam~, ~js_of_ocaml~ and of course ~node~
 installed. Until I get this all on ~opam~ you'll need to do the
