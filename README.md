@@ -64,7 +64,9 @@ following steps.
 1.  Get the `nodejs` package installed on your machine.
 
 ```shell
-$ opam install nodejs
+$ git clone https://github.com/fxfactorial/ocaml-nodejs
+$ cd ocaml-nodejs
+$ opam pin add nodejs . -y
 ```
 
 1.  Get the `socket_io` package installed on your machine.
@@ -94,3 +96,4 @@ directly just invoke node with `node chat_server.js`.)
     time to cover the API and the bindings that I'm also writing for
     `express` and `socket.io`
 2.  `JavaScript`
+3.  Some duplication happening, need to investigate.

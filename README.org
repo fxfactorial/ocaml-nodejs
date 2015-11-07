@@ -68,7 +68,9 @@ following steps.
 
 1) Get the ~nodejs~ package installed on your machine.
 #+BEGIN_SRC shell
-$ opam install nodejs
+$ git clone https://github.com/fxfactorial/ocaml-nodejs
+$ cd ocaml-nodejs
+$ opam pin add nodejs . -y
 #+END_SRC
 2) Get the ~socket_io~ package installed on your machine.
 #+BEGIN_SRC shell
