@@ -59,6 +59,8 @@ type ip_family = Ip4 | Ip6
 type encoding = Ascii | Utf_8 | Utf_16_le
               | Ucs_2 | Base_64 | Binary | Hex
 
+type platform = Darwin | Freebsd | Linux | Sunos | Win32
+
 let string_of_encoding = function
   | Ascii -> "ascii"
   | Utf_8 -> "utf8"
@@ -89,7 +91,13 @@ class process = object
   (* method on_unhandled_rejection *)
   (* method rejections_handled *)
 
-  method platform = raw_js <!> "platform" |> Js.to_string
+  method platform = match raw_js <!> "platform" |> Js.to_string with
+    | "darwin" -> Darwin
+    | "freebsd" -> Freebsd
+    | "linux" -> Linux
+    | "sunos" -> Sunos
+    | "win32" -> Win32
+    | _ -> assert false
 
   method version = raw_js <!> "version" |> Js.to_string
 
