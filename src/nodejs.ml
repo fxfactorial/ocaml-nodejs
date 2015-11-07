@@ -295,10 +295,11 @@ module Child_process = struct
   let exec
       ?opts
       ?f:(f : (Error.error -> Buffer.buffer -> Buffer.buffer) option)
-      cmd =
+      (* Shouldn't be unit *)
+      cmd : unit =
     let handle = require_module "child_process" in
     match (opts, f) with
-    | (None, None) -> m handle "exec" [|to_js_str cmd|]
+    | (None, None) -> m handle "exec" [|to_js_str cmd|] |> ignore
     (* TODO Implement this *)
     | _ -> assert false
 
