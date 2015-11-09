@@ -98,6 +98,10 @@ class process = object
   (* method on_unhandled_rejection *)
   (* method rejections_handled *)
 
+  method get_env (s : string) =
+    try Some ((raw_js <!> "env") <!> (String.uppercase s) |> Js.to_string)
+    with _ -> None
+
   method platform = match raw_js <!> "platform" |> Js.to_string with
     | "darwin" -> Darwin
     | "freebsd" -> Freebsd
