@@ -1,4 +1,4 @@
-pkgs := socket_io
+pkgs := socket_io,colors_js
 js_debug := --debug-info --no-inline --pretty
 
 # Do not use it breaks the script, very odd!
