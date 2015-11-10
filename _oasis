@@ -1,6 +1,6 @@
 OASISFormat: 0.4
 Name:        nodejs
-Version:     0.3
+Version:     0.4
 Synopsis:    js_of_ocaml bindings for nodejs
 Authors:     Edgar Aroutiounian <edgar.factorial@gmail.com>
 Maintainers: Edgar Aroutiounian <edgar.factorial@gmail.com>
