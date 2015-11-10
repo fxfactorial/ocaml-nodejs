@@ -9,7 +9,7 @@ define colorecho
 endef
 
 run:all clean
-	@npm install socket.io
+	@npm install socket.io colors
 	node chat_server.js
 
 all:

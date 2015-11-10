@@ -41,9 +41,14 @@ let () =
     end
   in
   let app = server#listen ~port:8080 begin fun () ->
-      Printf.sprintf
-        "Started Server and Running node: %s" (new process#version)
+
+      let s =
+        Printf.sprintf "Started Server and Running node: %s" (new process#version)
+      in
+
+      Colors_js.colorize ~msg:s ~styles:[Colors_js.Cyan_bg; Colors_js.Inverse] []
       |> print_endline
+
     end
   in
 
@@ -100,19 +105,32 @@ installed. Until I get this all on ~opam~ you'll need to do the
 following steps.
 
 1) Get the ~nodejs~ package installed on your machine.
+
 #+BEGIN_SRC shell
 $ git clone https://github.com/fxfactorial/ocaml-nodejs
 $ cd ocaml-nodejs
 $ opam pin add nodejs . -y
 #+END_SRC
+
 2) Get the ~socket_io~ package installed on your machine.
+
 #+BEGIN_SRC shell
-$ git clone https://github.com/fxfactorial/ocaml-npm-socket-io
+$ git clone https://github.com/bean-code/ocaml-npm-socket-io
 $ cd ocaml-npm-socket-io
 $ opam pin add socket_io . -y
 #+END_SRC
-3) Compile ~chat_server.ml~ into a working ~node~ program. Note that
+
+3) Get the colors_js package installed on your machine.
+
+#+BEGIN_SRC shell
+$ git clone https://github.com/bean-code/ocaml-npm-colors-js
+$ cd ocaml-npm-colors-js
+$ opam pin add colors_js . -y
+#+END_SRC
+
+4) Compile ~chat_server.ml~ into a working ~node~ program. Note that
    this will install a local node module, the ~socket.io~ module.
+
 #+BEGIN_SRC shell
 $ cd examples
 $ make
@@ -122,6 +140,7 @@ and open up localhost:8080, you'll have a working ~node~ server.
 
 (Note that you'll only need to call ~make~ once, afterwards you can
 directly just invoke node with ~node chat_server.js~.)
+
 * Issues
 1) ~node~ has a pretty big API so its going to take me a little bit of
    time to cover the API and the bindings that I'm also writing for

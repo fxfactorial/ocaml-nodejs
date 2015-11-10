@@ -15,9 +15,14 @@ let () =
     end
   in
   let app = server#listen ~port:8080 begin fun () ->
-      Printf.sprintf
-        "Started Server and Running node: %s" (new process#version)
+
+      let s =
+        Printf.sprintf "Started Server and Running node: %s" (new process#version)
+      in
+
+      Colors_js.colorize ~msg:s ~styles:[Colors_js.Cyan_bg; Colors_js.Inverse] []
       |> print_endline
+
     end
   in
 

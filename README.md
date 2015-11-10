@@ -35,23 +35,28 @@ installed socket.io at some point.
 15      end
 16    in
 17    let app = server#listen ~port:8080 begin fun () ->
-18        Printf.sprintf
-19          "Started Server and Running node: %s" (new process#version)
-20        |> print_endline
-21      end
-22    in
-23  
-24    let io = io#listen app in
-25    io#sockets#on_connection begin fun socket ->
-26  
-27      socket#on "message_to_server" begin fun data ->
+18  
+19        let s =
+20          Printf.sprintf "Started Server and Running node: %s" (new process#version)
+21        in
+22  
+23        Colors_js.colorize ~msg:s ~styles:[Colors_js.Cyan_bg; Colors_js.Inverse] []
+24        |> print_endline
+25  
+26      end
+27    in
 28  
-29        io#sockets#emit
-30          ~event_name:"message_to_client"
-31          !!(object%js val message = data <!> "message" end)
-32  
-33      end
-34    end
+29    let io = io#listen app in
+30    io#sockets#on_connection begin fun socket ->
+31  
+32      socket#on "message_to_server" begin fun data ->
+33  
+34        io#sockets#emit
+35          ~event_name:"message_to_client"
+36          !!(object%js val message = data <!> "message" end)
+37  
+38      end
+39    end
 ```
 
 The `<!>` infix operator is just a way to get a field of a JavaScript
@@ -105,9 +110,17 @@ $ opam pin add nodejs . -y
 1.  Get the `socket_io` package installed on your machine.
 
 ```shell
-$ git clone https://github.com/fxfactorial/ocaml-npm-socket-io
+$ git clone https://github.com/bean-code/ocaml-npm-socket-io
 $ cd ocaml-npm-socket-io
 $ opam pin add socket_io . -y
+```
+
+1.  Get the colors\_js package installed on your machine.
+
+```shell
+$ git clone https://github.com/bean-code/ocaml-npm-colors-js
+$ cd ocaml-npm-colors-js
+$ opam pin add colors_js . -y
 ```
 
 1.  Compile `chat_server.ml` into a working `node` program. Note that
