@@ -20,8 +20,9 @@ Here's the example's source code: which is located along side its
 dependencies and make file in the ~examples~ directory.
 
 *NOTE* You will still need to have npm modules installed, for instance
-this example uses ~socket.io~, which means you'll need to have npm
-installed socket.io at some point.
+this example uses ~socket.io~, ~colors.js~ which means you'll need to
+have npm installed socket.io and colors at some point. (Although the
+~Makefile~ in examples will do this npm install for you)
 
 #+BEGIN_SRC ocaml -n
 (* Basically a translation of
