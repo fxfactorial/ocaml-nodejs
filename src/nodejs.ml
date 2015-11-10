@@ -353,8 +353,10 @@ module Net = struct
     | Ip4 -> 4
     | Ip6 -> 6
 
-  class socket = object
+  class socket raw_js = object
 
+    (* INCORRECT SIGNATURE *)
+    method peer_certificate : unit = m raw_js "getPeerCertificate" [||]
 
   end
 
@@ -474,22 +476,50 @@ module Http = struct
 
   class incoming_message raw_js = object
 
-    method http_version =
-      raw_js <!> "httpVersion" |> Js.to_string
-
     method on_close (f : (unit -> unit)) : unit =
       m raw_js "on" [| to_js_str "close"; i !@f|]
+
+    method http_version = raw_js <!> "httpVersion" |> Js.to_string
 
     method headers =
       raw_js <!> "headers" |> to_json
       |> Yojson.Basic.Util.to_assoc
       |> List.map (fun (a, b) -> (a, Yojson.Basic.Util.to_string b))
 
+    method trailers = raw_js <!> "trailers" |> to_json
+
     method raw_headers =
       (raw_js <!> "rawHeaders" : Js.js_string Js.t Js.js_array Js.t)
       |> Js.to_array
       |> Array.map Js.to_string
       |> Array.to_list
+
+    method set_timeout ~msec (f: (unit -> unit)) : incoming_message =
+      m raw_js "setTimeout" [|i (msec : int); i !@f|]
+
+    (** Only valid for request obtained from http.Server. *)
+    method method_ =
+      match raw_js <!> "method" |> Js.to_string |> String.uppercase with
+      | "CHECKOUT" -> Checkout | "Connect" -> Connect
+      | "COPY" -> Copy | "DELETE" | "GET" -> Get | "HEAD" -> Head
+      | "LOCK" -> Lock | "MSEARCH" -> M_search | "MKACTIVITY" -> Mkactivity
+      | "MKCOL" -> Mkcol | "MOVE" -> Move | "NOTIFY" -> Notify
+      | "OPTIONS" -> Options | "PATCH" -> Patch | "POST" -> Post
+      | "PROPFIND" -> Propfind | "PROPPATH" -> Proppath | "PURGE" -> Purge
+      | "PUT" -> Put | "REPORT" -> Report | "SEARCH" -> Search
+      | "SUBSCRIBE" -> Subscribe | "TRACE" -> Trace | "UNLOCK" -> Unlock
+      | "UNSUBSCRIBE" -> Unsubscribe | _ -> assert false
+
+    (** Only valid for request obtained from http.Server, Request URL
+        string. This contains only the URL that is present in the actual
+        HTTP request *)
+    method url = raw_js <!> "url" |> Js.to_string
+
+    method status_code : int = raw_js <!> "statusCode"
+
+    method status_message = raw_js <!> "statusMessage" |> Js.to_string
+
+    method socket = new Net.socket (raw_js <!> "socket")
 
   end
 
