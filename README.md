@@ -13,6 +13,10 @@ Working Chat Server
 Here's the example's source code: which is located along side its
 dependencies and make file in the `examples` directory.
 
+**NOTE** You will still need to have npm modules installed, for instance
+this example uses `socket.io`, which means you'll need to have npm
+installed socket.io at some point.
+
 ```ocaml
  1  (* Basically a translation of
  2     http://arminboss.de/2013/tutorial-how-to-create-a-basic-chat-with-node-js/ *)
