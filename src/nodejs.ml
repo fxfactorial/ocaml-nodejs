@@ -76,6 +76,12 @@ type encoding = Ascii | Utf_8 | Utf_16_le
 
 type platform = Darwin | Freebsd | Linux | Sunos | Win32
 
+let int_of_ip_family = function
+  | Ip4 -> 4 | Ip6 -> 6
+
+let ip_of_int = function
+  | 4 -> Ip4 | 6 -> Ip6 | _ -> assert false
+
 let string_of_platform = function
   | Darwin -> "darwin"
   | Freebsd -> "freebsd"
@@ -247,7 +253,7 @@ end
 
 module Error = struct
 
-  class error  = object
+  class error raw_js = object
 
 
   end
@@ -388,10 +394,86 @@ module Crypto = struct
 
 end
 
+(** This module contains functions that belong to two different categories:
+
+    1) Functions that use the underlying operating system facilities
+    to perform name resolution, and that do not necessarily do any
+    network communication. This category contains only one function:
+    lookup.
+
+    Developers looking to perform name resolution in the same way that
+    other applications on the same operating system behave should use
+    lookup
+
+    2) Functions that connect to an actual DNS server to perform name
+    resolution, and that always use the network to perform DNS
+    queries. This category contains all functions in the dns module
+    but lookup. These functions do not use the same set of
+    configuration files than what lookup uses. For instance, they do
+    not use the configuration from /etc/hosts. These functions should
+    be used by developers who do not want to use the underlying
+    operating system's facilities for name resolution, and instead
+    want to always perform DNS queries. *)
 module DNS = struct
+
+  type dns_hint =
+    (** Returned address types are determined by the types of
+        addresses supported by the current system. For example, IPv4
+        addresses are only returned if the current system has at least one
+        IPv4 address configured. Loopback addresses are not considered. *)
+      Addr_config
+    (** If the IPv6 family was specified, but no IPv6 addresses
+        were found, then return IPv4 mapped IPv6 addresses. Note that
+        it is not supported on some operating systems (e.g FreeBSD
+        10.1).*)
+    | V4_mapped
+
+  type lookup_opts =
+    { (** If None, then both IP v4 and v6 addresses are accepted. *)
+      ip_family : ip_family option;
+      (** List of valid hints, will be logically ORed *)
+      dns_hints  : dns_hint list; }
+
+  type addresses = string list
+
+  let hint_of_int = function
+    | 1024 -> Addr_config | 2048 -> V4_mapped | _ -> assert false
+
+  let int_of_hint = function Addr_config -> 1024 | V4_mapped -> 2048
 
   let raw_js = require_module "dns"
 
+  (** Callback gets an empty list of addresses if none found for this
+      host *)
+  let lookup ~opts ~host
+      (f : (Error.error -> addresses -> ip_family -> unit)) : unit =
+
+    let wrapped = fun e addr fam ->
+      f (new Error.error e) ([addr |> Js.to_string]) (ip_of_int fam)
+    in
+
+    match opts with {ip_family = f_opt; dns_hints = l } -> match (f_opt, l) with
+    | (None, []) ->
+      m raw_js "lookup" [|to_js_str host; i !@ wrapped|]
+    | (None, l) ->
+      let with_hints =
+        !!(object%js
+          val hints = List.fold_left ( lor ) 0 (List.map int_of_hint l)
+        end)
+      in
+      m raw_js "lookup" [|to_js_str host; with_hints; i !@ wrapped|]
+    | (Some ip, []) ->
+      let with_ip = !!(object%js val family = int_of_ip_family ip end) in
+      m raw_js "lookup" [|to_js_str host; with_ip; i !@ wrapped|]
+
+    | (Some ip, l) ->
+      let with_both =
+        !!(object%js
+          val family = int_of_ip_family ip
+          val hints = List.fold_left ( lor ) 0 (List.map int_of_hint l)
+        end)
+      in
+      m raw_js "lookup" [|to_js_str host; with_both; i !@ wrapped|]
 
 end
 
@@ -411,9 +493,6 @@ module Net = struct
                     family : int option;
                     lookup : (unit -> unit) option; }
 
-  let int_of_ip_family = function
-    | Ip4 -> 4
-    | Ip6 -> 6
 
   class socket raw_js = object
 
