@@ -48,6 +48,21 @@ let obj_of_alist a_l =
 let to_string_list g =
   g |> Js.str_array |> Js.to_array |> Array.map Js.to_string |> Array.to_list
 
+(** Get all keys of an Object *)
+let keys obj =
+  m (Js.Unsafe.variable "Object") "keys" [|obj|]
+  |> Js.to_array |> Array.map Js.to_string |> Array.to_list
+
+(** Call a function for each value of each key in an Object, throw
+    away result *)
+let for_each_iter ~f obj =
+  keys obj |> List.iter (fun k -> f (Js.Unsafe.get obj k))
+
+(** Call a function for each value of each key in an Object, keep
+    result *)
+let for_each_map ~f obj =
+  keys obj |> List.map (fun k -> f k (Js.Unsafe.get obj k))
+
 (* This will crap out at the moment because of int overflow on some
    field *)
 (* let constants = require_module "constants" |> to_json *)
@@ -1111,6 +1126,27 @@ module Cluster = struct
         f e_code (signal_of_string signal)
       in
       m raw_js "on" [|to_js_str "exit"; i !@wrapped|]
+
+  end
+
+  class cluster = object
+
+    val raw_js = require_module "cluster"
+
+    (** A reference to the current worker object. Not available in the
+        master process.*)
+    method worker = new worker (raw_js <!> "worker")
+
+    (** Only available in the master process.
+
+        A worker is removed from cluster.workers after the worker has
+        disconnected and exited. The order between these two events
+        cannot be determined in advance. However, it is guaranteed
+        that the removal from the cluster.workers list happens before
+        last 'disconnect' or 'exit' event is emitted. *)
+    method workers : (int * worker) list =
+      raw_js <!> "workers"
+      |> for_each_map ~f:(fun k raw_w -> (int_of_string k, new worker raw_w))
 
   end
 
