@@ -77,7 +77,6 @@ let string_of_encoding = function
   | Binary -> "binary"
   | Hex -> "hex"
 
-(* TODO, need to do similar thing for signals *)
 type signal = SIG_HUP | SIG_INT | SIG_QUIT | SIG_ILL
             | SIG_TRAP | SIG_ABRT | SIG_EMT | SIG_FPE
             | SIG_KILL | SIG_BUS | SIG_SEGV | SIG_SYS
@@ -88,22 +87,40 @@ type signal = SIG_HUP | SIG_INT | SIG_QUIT | SIG_ILL
             | SIG_INFO | SIG_USR1 | SIG_USR2
 
 let string_of_signal = function
-  | SIG_HUP -> "SIGHUP" | SIG_INT -> "SIGINT"
-  | SIG_QUIT -> "SIGQUIT" | SIG_ILL -> "SIGILL"
-  | SIG_TRAP -> "SIGTRAP" | SIG_ABRT -> "SIGABRT"
-  | SIG_EMT -> "SIGEMT" | SIG_FPE -> "SIGFPE"
-  | SIG_KILL -> "SIGKILL" | SIG_BUS -> "SIGBUS"
-  | SIG_SEGV -> "SIGSEGV" | SIG_SYS -> "SIGSYS"
-  | SIG_PIPE -> "SIGPIPE" | SIG_ALRM -> "SIGALRM"
-  | SIG_TERM -> "SIGTERM" | SIG_URG -> "SIGURG"
-  | SIG_STOP -> "SIGSTOP" | SIG_TSTP -> "SIGTSTP"
-  | SIG_CONT -> "SIGCONT" | SIG_CHLD -> "SIGCHLD"
-  | SIG_TTIN -> "SIGTTIN" | SIG_TTOU -> "SIGTTOU"
-  | SIG_IO -> "SIGIO" | SIG_XCPU -> "SIGXCPU"
-  | SIG_XFSZ -> "SIGXFSZ" | SIG_VTALRM -> "SIGVTALRM"
-  | SIG_PROF -> "SIGPROF" | SIG_WINCH -> "SIGWINCH"
-  | SIG_INFO -> "SIG_INFO" | SIG_USR1 -> "SIGUSR1"
+  | SIG_HUP  -> "SIGHUP"   | SIG_INT    -> "SIGINT"
+  | SIG_QUIT -> "SIGQUIT"  | SIG_ILL    -> "SIGILL"
+  | SIG_TRAP -> "SIGTRAP"  | SIG_ABRT   -> "SIGABRT"
+  | SIG_EMT  -> "SIGEMT"   | SIG_FPE    -> "SIGFPE"
+  | SIG_KILL -> "SIGKILL"  | SIG_BUS    -> "SIGBUS"
+  | SIG_SEGV -> "SIGSEGV"  | SIG_SYS    -> "SIGSYS"
+  | SIG_PIPE -> "SIGPIPE"  | SIG_ALRM   -> "SIGALRM"
+  | SIG_TERM -> "SIGTERM"  | SIG_URG    -> "SIGURG"
+  | SIG_STOP -> "SIGSTOP"  | SIG_TSTP   -> "SIGTSTP"
+  | SIG_CONT -> "SIGCONT"  | SIG_CHLD   -> "SIGCHLD"
+  | SIG_TTIN -> "SIGTTIN"  | SIG_TTOU   -> "SIGTTOU"
+  | SIG_IO   -> "SIGIO"    | SIG_XCPU   -> "SIGXCPU"
+  | SIG_XFSZ -> "SIGXFSZ"  | SIG_VTALRM -> "SIGVTALRM"
+  | SIG_PROF -> "SIGPROF"  | SIG_WINCH  -> "SIGWINCH"
+  | SIG_INFO -> "SIG_INFO" | SIG_USR1   -> "SIGUSR1"
   | SIG_USR2 -> "SIGUSR2"
+
+let signal_of_string = function
+  | "SIGHUP"   -> SIG_HUP  | "SIGINT"    -> SIG_INT
+  | "SIGQUIT"  -> SIG_QUIT | "SIGILL"    -> SIG_ILL
+  | "SIGTRAP"  -> SIG_TRAP | "SIGABRT"   -> SIG_ABRT
+  | "SIGEMT"   -> SIG_EMT  | "SIGFPE"    -> SIG_FPE
+  | "SIGKILL"  -> SIG_KILL | "SIGBUS"    ->  SIG_BUS
+  | "SIGSEGV"  -> SIG_SEGV | "SIGSYS"    -> SIG_SYS
+  | "SIGPIPE"  -> SIG_PIPE | "SIGALRM"   -> SIG_ALRM
+  | "SIGTERM"  -> SIG_TERM | "SIGURG"    -> SIG_URG
+  | "SIGSTOP"  -> SIG_STOP | "SIGTSTP"   ->  SIG_TSTP
+  | "SIGCONT"  -> SIG_CONT | "SIGCHLD"   ->  SIG_CHLD
+  | "SIGTTIN"  -> SIG_TTIN | "SIGTTOU"   -> SIG_TTOU
+  | "SIGIO"    -> SIG_IO   | "SIGXCPU"   -> SIG_XCPU
+  | "SIGXFSZ"  -> SIG_XFSZ | "SIGVTALRM" -> SIG_VTALRM
+  | "SIGPROF"  -> SIG_PROF | "SIGWINCH"  -> SIG_WINCH
+  | "SIG_INFO" -> SIG_INFO | "SIGUSR1"   -> SIG_USR1
+  | "SIGUSR2"  -> SIG_USR2 | _ -> assert false
 
 class process = object
 
@@ -1026,7 +1043,75 @@ module Cluster = struct
 
     (* method send ?callback ?handle msg : bool =  *)
 
-    (* method kill  *)
+    (** This function will kill the worker. In the master, it does
+        this by disconnecting the worker.process, and once disconnected,
+        killing with signal. In the worker, it does it by disconnecting
+        the channel, and then exiting with code 0.
+
+        Causes suicide to be set.*)
+    method kill (sig_ : signal option) : unit = match sig_ with
+      | None -> m raw_js "kill" [|string_of_signal SIG_TERM |> to_js_str|]
+      | Some s -> m raw_js "kill" [|string_of_signal s |> to_js_str|]
+
+    (** In a worker, this function will close all servers, wait for
+        the 'close' event on those servers, and then disconnect the IPC
+        channel.
+
+        In the master, an internal message is sent to the worker
+        causing it to call .disconnect() on itself.
+
+        Causes .suicide to be set.
+
+        Note that after a server is closed, it will no longer accept
+        new connections, but connections may be accepted by any other
+        listening worker. Existing connections will be allowed to
+        close as usual. When no more connections exist, see
+        server.close(), the IPC channel to the worker will close
+        allowing it to die gracefully.
+
+        The above applies only to server connections, client
+        connections are not automatically closed by workers, and
+        disconnect does not wait for them to close before exiting.
+
+        Note that in a worker, process.disconnect exists, but it is
+        not this function, it is disconnect.
+
+        Because long living server connections may block workers from
+        disconnecting, it may be useful to send a message, so
+        application specific actions may be taken to close them. It
+        also may be useful to implement a timeout, killing a worker if
+        the disconnect event has not been emitted after some time. *)
+    method disconnect : unit = m raw_js "disconnect" [||]
+
+    (** This function returns true if the worker's process has
+        terminated (either because of exiting or being
+        signaled). Otherwise, it returns false. *)
+    method is_dead = m raw_js "isDead" [||] |> Js.to_bool
+
+    (** This function returns true if the worker is connected to its
+        master via its IPC channel, false otherwise. A worker is connected to
+        its master after it's been created. It is disconnected after the
+        disconnect event is emitted. *)
+    method is_connected = m raw_js "isConnected" [||] |> Js.to_bool
+
+    (* method on_message  : unit = *)
+    (** Similar to the cluster.on('online') event, but specific to
+        this worker. *)
+    method on_online (f : (unit -> unit)) : unit =
+      m raw_js "on" [|to_js_str "online"; i !@f|]
+
+    (* method on_listening (f : (address -> unit)) : unit = *)
+    (*   m raw_js "on" [|to_js_str "listening"; i !@f|] *)
+
+    method on_disconnect (f : (unit -> unit)) : unit =
+      m raw_js "on" [|to_js_str "disconnect"; i !@f|]
+
+    method on_exit (f : (int -> signal -> unit)) : unit =
+      let wrapped = fun e_code signal ->
+        f e_code (signal_of_string signal)
+      in
+      m raw_js "on" [|to_js_str "exit"; i !@wrapped|]
+
   end
 
 end
