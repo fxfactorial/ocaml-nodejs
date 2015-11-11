@@ -78,8 +78,32 @@ let string_of_encoding = function
   | Hex -> "hex"
 
 (* TODO, need to do similar thing for signals *)
-(* type signals = Sigint *)
-(* let string_of_signal = function  *)
+type signal = SIG_HUP | SIG_INT | SIG_QUIT | SIG_ILL
+            | SIG_TRAP | SIG_ABRT | SIG_EMT | SIG_FPE
+            | SIG_KILL | SIG_BUS | SIG_SEGV | SIG_SYS
+            | SIG_PIPE | SIG_ALRM | SIG_TERM | SIG_URG
+            | SIG_STOP | SIG_TSTP | SIG_CONT | SIG_CHLD
+            | SIG_TTIN | SIG_TTOU | SIG_IO | SIG_XCPU
+            | SIG_XFSZ | SIG_VTALRM | SIG_PROF | SIG_WINCH
+            | SIG_INFO | SIG_USR1 | SIG_USR2
+
+let string_of_signal = function
+  | SIG_HUP -> "SIGHUP" | SIG_INT -> "SIGINT"
+  | SIG_QUIT -> "SIGQUIT" | SIG_ILL -> "SIGILL"
+  | SIG_TRAP -> "SIGTRAP" | SIG_ABRT -> "SIGABRT"
+  | SIG_EMT -> "SIGEMT" | SIG_FPE -> "SIGFPE"
+  | SIG_KILL -> "SIGKILL" | SIG_BUS -> "SIGBUS"
+  | SIG_SEGV -> "SIGSEGV" | SIG_SYS -> "SIGSYS"
+  | SIG_PIPE -> "SIGPIPE" | SIG_ALRM -> "SIGALRM"
+  | SIG_TERM -> "SIGTERM" | SIG_URG -> "SIGURG"
+  | SIG_STOP -> "SIGSTOP" | SIG_TSTP -> "SIGTSTP"
+  | SIG_CONT -> "SIGCONT" | SIG_CHLD -> "SIGCHLD"
+  | SIG_TTIN -> "SIGTTIN" | SIG_TTOU -> "SIGTTOU"
+  | SIG_IO -> "SIGIO" | SIG_XCPU -> "SIGXCPU"
+  | SIG_XFSZ -> "SIGXFSZ" | SIG_VTALRM -> "SIGVTALRM"
+  | SIG_PROF -> "SIGPROF" | SIG_WINCH -> "SIGWINCH"
+  | SIG_INFO -> "SIG_INFO" | SIG_USR1 -> "SIGUSR1"
+  | SIG_USR2 -> "SIGUSR2"
 
 class process = object
 
@@ -158,7 +182,8 @@ class process = object
   method kill ?signal (j : int) : unit =
     match signal with
     | None -> m raw_js "kill" [|i j|]
-    | Some (g : string) -> m raw_js "kill" [|i j|]
+    | Some (g : signal) ->
+      m raw_js "kill" [|i j; to_js_str (string_of_signal g)|]
 
   method title = raw_js <!> "title" |> Js.to_string
 
@@ -220,9 +245,11 @@ module Buffer = struct
     method write ?(offset=0) ?(encoding=Utf_8) ?length (s : string) : int =
       (match length with
        | None ->
-         [|to_js_str s; i offset; i (self#length - offset); to_js_str (string_of_encoding encoding)|]
+         [|to_js_str s; i offset; i (self#length - offset);
+           to_js_str (string_of_encoding encoding)|]
        | Some (j : int) ->
-         [|to_js_str s; i offset; i j; to_js_str (string_of_encoding encoding)|])
+         [|to_js_str s; i offset; i j;
+           to_js_str (string_of_encoding encoding)|])
       |> m raw_js "write"
 
     method to_string ?(encoding=Utf_8) ?(start=0) ?end_ () : string =
@@ -245,7 +272,9 @@ module Buffer = struct
     | Size i ->
       Js.Unsafe.js_expr (Printf.sprintf "new Buffer(%d)" i)
     | String (data, encoding) ->
-      Js.Unsafe.js_expr (Printf.sprintf "new Buffer(%s, %s)" data (string_of_encoding encoding))
+      Js.Unsafe.js_expr
+        (Printf.sprintf
+           "new Buffer(%s, %s)" data (string_of_encoding encoding))
     (* Come back to this *)
     | _ -> assert false
   (* let copy_buffer (b : buffer) = Js.Unsafe. *)
@@ -385,7 +414,7 @@ module Child_process = struct
                      shell : string;
                      timeout: int;
                      max_buffer_size : int;
-                     kill_signal: string;
+                     kill_signal: signal;
                      uid : int;
                      gid : int; }
 
@@ -440,7 +469,7 @@ module Child_process = struct
     method connected : bool = raw_js <!> "connected"
 
     method kill signal : unit =
-      m raw_js "kill" [|i (Js.string signal)|]
+      m raw_js "kill" [|i (Js.string (string_of_signal signal))|]
 
     method spawn_sync (* ?opts *) cmd args : child_proc =
       let handle =
@@ -539,7 +568,8 @@ module Http = struct
         ~status_code:(status_code : int)
         (headers : (string * string) list) : unit =
       match status_message with
-      | None -> m raw_js "writeHead" [|i status_code; i (obj_of_alist headers)|]
+      | None ->
+        m raw_js "writeHead" [|i status_code; i (obj_of_alist headers)|]
       | Some msg ->
         m raw_js "writeHead" [|i status_code;
                                i (Js.string msg);
@@ -599,7 +629,8 @@ module Http = struct
 
   let create_server handler =
     let wrapped_handler = fun incoming_msg response ->
-      handler (new incoming_message incoming_msg) (new server_response response)
+      handler
+        (new incoming_message incoming_msg) (new server_response response)
     in
     new server wrapped_handler
 
@@ -856,7 +887,8 @@ module Path = struct
       shell.*)
   let resolve ~from to_ =
     m raw_js "resolve"
-      (Array.append (List.map to_js_str from |> Array.of_list) [|to_js_str to_|])
+      (Array.append
+         (List.map to_js_str from |> Array.of_list) [|to_js_str to_|])
     |> Js.to_string
 
   let is_absolute p = m raw_js "isAbsolute" [|to_js_str p|] |> Js.to_bool
@@ -972,5 +1004,29 @@ module Util = struct
   (* let inspect ?opts obj = *)
   (*   match opts with *)
   (*   | None -> m raw_js "inspect" obj *)
+
+end
+
+module Cluster = struct
+
+  type s_policy = None | Round_robin
+
+  class worker raw_js = object
+
+    method id : int = raw_js <!> "id"
+
+    (* method process : Child_process.child_proc *)
+
+    (** The boolean worker.suicide lets you distinguish between
+        voluntary and accidental exit, the master may choose not to
+        respawn a worker based on this value.*)
+    method suicide : bool option =
+      if raw_js <!> "suicide" = Js.undefined then None
+      else Some (raw_js <!> "suicide")
+
+    (* method send ?callback ?handle msg : bool =  *)
+
+    (* method kill  *)
+  end
 
 end
