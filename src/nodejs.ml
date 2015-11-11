@@ -819,3 +819,89 @@ module Zlib = struct
 
 end
 
+(** This module contains utilities for handling and transforming file
+    paths. Almost all these methods perform only string
+    transformations. The file system is not consulted to check whether
+    paths are valid.*)
+module Path = struct
+
+  type parsed_path = { root : string;
+                       dir : string;
+                       base : string;
+                       ext: string;
+                       name : string; }
+
+  let raw_js = require_module "path"
+
+  let sep = raw_js <!> "sep"
+
+  let delimiter = raw_js <!> "delimiter"
+
+  let normalize s = m raw_js "normalize" [|to_js_str s|] |> Js.to_string
+
+  let join l =
+    m raw_js "join" (List.map to_js_str l |> Array.of_list)
+    |> Js.to_string
+
+  (** Resolves to to an absolute path.
+
+      If to isn't already absolute from arguments are prepended in right to
+      left order, until an absolute path is found. If after using all from
+      paths still no absolute path is found, the current working directory
+      is used as well. The resulting path is normalized, and trailing
+      slashes are removed unless the path gets resolved to the root
+      directory. Non-string from arguments are ignored.
+
+      Another way to think of it is as a sequence of cd commands in a
+      shell.*)
+  let resolve ~from to_ =
+    m raw_js "resolve"
+      (Array.append (List.map to_js_str from |> Array.of_list) [|to_js_str to_|])
+    |> Js.to_string
+
+  let is_absolute p = m raw_js "isAbsolute" [|to_js_str p|] |> Js.to_bool
+
+  (** Solve the relative path from from to to.
+
+      At times we have two absolute paths, and we need to derive the
+      relative path from one to the other. This is actually the reverse
+      transform of resolve. *)
+  let relative ~from to_ =
+    m raw_js "relative" [|to_js_str from; to_js_str to_|]
+    |> Js.to_string
+
+  let dir_name p = m raw_js "dirname" [|to_js_str p|] |> Js.to_string
+
+  let base_name ?ext p =
+    (match ext with
+     | None -> m raw_js "basename" [|to_js_str p|]
+     | Some e -> m raw_js "basename" [|to_js_str p; to_js_str e|])
+    |> Js.to_string
+
+  let ext_name p =
+    match m raw_js "extname" [|to_js_str p|] |> Js.to_string with
+    | "" -> None
+    | e -> Some e
+
+  let parse p =
+    let h = m raw_js "parse" [|to_js_str p|] in
+    let pull key = h <!> key |> Js.to_string in
+    { root = pull "root";
+      dir = pull "dir";
+      base = pull "base";
+      ext = pull "ext";
+      name = pull "name"; }
+
+  let format {root; dir; base; ext; name} =
+    m raw_js "format" [|
+      !!(object%js
+        val root = to_js_str root
+        val dir = to_js_str dir
+        val base = to_js_str base
+        val ext = to_js_str ext
+        val name = to_js_str name
+      end)
+    |]
+    |> Js.to_string
+
+end
