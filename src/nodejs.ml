@@ -390,7 +390,8 @@ end
 
 module DNS = struct
 
-  (* let lookup () =  *)
+  let raw_js = require_module "dns"
+
 
 end
 
@@ -1129,9 +1130,33 @@ module Cluster = struct
 
   end
 
+  type settings = { exec_argv : string list;
+                    exec_path : string;
+                    exec_argv_worker : string list;
+                    silent : bool;
+                    uid : int;
+                    gid : int; }
+
   class cluster = object
 
     val raw_js = require_module "cluster"
+
+    method scheduling_policy =
+      match raw_js <!> "schedulingPolicy" with
+      | 0 -> None | 1 -> Round_robin | _ -> assert false
+
+    method settings =
+      let h = raw_js <!> "settings" in
+      {exec_argv = h <!> "execArgv" |> to_string_list;
+       exec_path = h <!> "exec" |> Js.to_string;
+       exec_argv_worker = h <!> "args" |> to_string_list;
+       silent = h <!> "silent" |> Js.to_bool;
+       uid = h <!> "uid";
+       gid = h <!> "gid"; }
+
+    method is_master = m raw_js "isMaster" [||] |> Js.to_bool
+
+    method is_worker = m raw_js "isWorker" [||] |> Js.to_bool
 
     (** Spawn a new worker process. This can only be called from the
         master process.*)
