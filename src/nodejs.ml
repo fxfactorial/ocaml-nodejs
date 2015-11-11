@@ -944,3 +944,33 @@ module Puny_code = struct
     b |> Js.to_string
 
 end
+
+module Util = struct
+
+  type logging_func = (string -> unit)
+
+  (* type inspect_opts = { show_hidden = bool; *)
+  (*                       dept : int option; *)
+  (*                       colors : bool; *)
+  (*                       custom_inspect : bool; } *)
+
+  let raw_js = require_module "util"
+
+  (** This is used to create a function which conditionally writes to
+      stderr based on the existence of a NODE_DEBUG environment
+      variable. If the section name appears in that environment
+      variable, then the returned function will be similar to
+      console.error(). If not, then the returned function is a
+      no-op.
+
+      You may separate multiple NODE_DEBUG environment variables with
+      a comma. For example, NODE_DEBUG=fs,net,tls. *)
+  let debug_log s : logging_func = m raw_js "debuglog" [|to_js_str s|]
+
+  let log s : unit = m raw_js "log" [|to_js_str s|]
+
+  (* let inspect ?opts obj = *)
+  (*   match opts with *)
+  (*   | None -> m raw_js "inspect" obj *)
+
+end
