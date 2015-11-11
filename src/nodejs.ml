@@ -905,3 +905,42 @@ module Path = struct
     |> Js.to_string
 
 end
+
+module Puny_code = struct
+
+  let raw_js = require_module "punycode"
+
+  let version = raw_js <!> "version"
+
+  (** Converts a Punycode string of ASCII-only symbols to a string of
+      Unicode symbols. *)
+  let decode s = m raw_js "decode" [|to_js_str s|] |> Js.to_string
+
+  (** Converts a string of Unicode symbols to a Punycode string of
+      ASCII-only symbols.*)
+  let encode s = m raw_js "encode" [|to_js_str s|] |> Js.to_string
+
+  (** Converts a Punycode string representing a domain name to
+      Unicode. Only the Punycoded parts of the domain name will be
+      converted, i.e. it doesn't matter if you call it on a string that
+      has already been converted to Unicode. *)
+  let to_unicode d = m raw_js "toUnicode" [|to_js_str d|] |> Js.to_string
+
+  (** Converts a Unicode string representing a domain name to
+      Punycode. Only the non-ASCII parts of the domain name will be
+      converted, i.e. it doesn't matter if you call it with a domain
+      that's already in ASCII. *)
+  let to_ascii d = m raw_js "toASCII" [|to_js_str d|] |> Js.to_string
+
+  let to_ucs2_array s : int array =
+    let ucs2 = raw_js <!> "ucs2" in
+    m ucs2 "decode" [|to_js_str s|] |> Js.to_array
+
+  [@@ocaml.warning "This isn't implemented correctly"]
+  let of_ucs2_array (ar : int array) =
+    let ucs2 = raw_js <!> "ucs2" in
+    (* Something wrong is happening in this Array.map *)
+    let b = m ucs2 "encode" (Array.map i ar) in
+    b |> Js.to_string
+
+end
