@@ -255,6 +255,7 @@ module Error = struct
 
   class error raw_js = object
 
+    method code : int = raw_js <!> "code"
 
   end
 
@@ -414,7 +415,7 @@ end
     be used by developers who do not want to use the underlying
     operating system's facilities for name resolution, and instead
     want to always perform DNS queries. *)
-module DNS = struct
+module Dns = struct
 
   type dns_hint =
     (** Returned address types are determined by the types of
@@ -474,6 +475,10 @@ module DNS = struct
         end)
       in
       m raw_js "lookup" [|to_js_str host; with_both; i !@ wrapped|]
+
+  let lookup_service ~addr ~port
+      (f : (Error.error -> string -> string -> unit)) : unit =
+    m raw_js "lookupService" [|to_js_str addr; i (port : int); i !@ f|]
 
 end
 
