@@ -1133,6 +1133,18 @@ module Cluster = struct
 
     val raw_js = require_module "cluster"
 
+    (** Spawn a new worker process. This can only be called from the
+        master process.*)
+    method fork (env : (string * string) list option) =
+      match env with
+      | None -> (m raw_js "fork" [||]) |> new worker
+      | Some l ->
+        m raw_js "fork"
+          [| !!(l |> List.map (fun (key, value) -> (key, to_js_str value))
+                |> Array.of_list
+                |> Js.Unsafe.obj) |]
+        |> new worker
+
     (** A reference to the current worker object. Not available in the
         master process.*)
     method worker = new worker (raw_js <!> "worker")
