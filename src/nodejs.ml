@@ -1272,3 +1272,22 @@ module Cluster = struct
   end
 
 end
+
+(** This module provides utilities for dealing with query strings. *)
+module Query_string = struct
+
+  let raw_js = Js.Unsafe.variable "querystring"
+
+  (* TODO Need to add the options object as well *)
+
+  (** Serialize an object to a query string. Optionally override the
+      default separator ('&') and assignment ('=') characters. *)
+  let stringify ?(sep="&") ?(eq="=") (obj : Js.Unsafe.any) =
+    m raw_js "stringify" [|i obj; to_js_str sep; to_js_str eq;|]
+
+  (** Deserialize a query string to an object. Optionally override the
+      default separator ('&') and assignment ('=') characters.*)
+  let parse ?(sep="&") ?(eq="=") s : Js.Unsafe.any =
+    m raw_js "parse" [|to_js_str s; to_js_str sep; to_js_str eq;|]
+
+end
