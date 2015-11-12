@@ -96,44 +96,26 @@ like this:
 
 # Steps to get the example working
 
-I assume that you have `opam`, `js_of_ocaml` and of course `node`
-installed. Until I get this all on `opam` you'll need to do the
-following steps.
+I assume that you have `opam` and of course `node`
+installed.
 
 1.  Get the `nodejs` package installed on your machine.
+    
+    ```shell
+    $ opam install nodejs colors_js socket_io
+    ```
 
-```shell
-$ git clone https://github.com/fxfactorial/ocaml-nodejs
-$ cd ocaml-nodejs
-$ opam pin add nodejs . -y
-```
-
-2.  Get the `socket_io` package installed on your machine.
-
-```shell
-$ git clone https://github.com/bean-code/ocaml-npm-socket-io
-$ cd ocaml-npm-socket-io
-$ opam pin add socket_io . -y
-```
-
-2.  Get the colors\_js package installed on your machine.
-
-```shell
-$ opam install colors_js -y
-```
-
-3.  Compile `chat_server.ml` into a working `node` program. Note that
-    this will install a local node module, the `socket.io` module.
-
-```shell
-$ cd examples
-$ make
-```
-
-and open up localhost:8080, you'll have a working `node` server.
-
-(Note that you'll only need to call `make` once, afterwards you can
-directly just invoke node with `node chat_server.js`.)
+2.  Compile `chat_server.ml` into a working `node` program.
+    
+    ```shell
+    $ cd examples
+    $ make
+    ```
+    
+    and open up localhost:8080, you'll have a working `node` server.
+    
+    (Note that you'll only need to call `make` once, afterwards you can
+    directly just invoke node with `node chat_server.js`.)
 
 # Issues
 

@@ -101,44 +101,26 @@ function sendMessage() {
 #+END_SRC
 
 * Steps to get the example working
-I assume that you have ~opam~, ~js_of_ocaml~ and of course ~node~
-installed. Until I get this all on ~opam~ you'll need to do the
-following steps.
+I assume that you have ~opam~ and of course ~node~
+installed.
 
 1) Get the ~nodejs~ package installed on your machine.
 
-#+BEGIN_SRC shell
-$ git clone https://github.com/fxfactorial/ocaml-nodejs
-$ cd ocaml-nodejs
-$ opam pin add nodejs . -y
-#+END_SRC
+   #+BEGIN_SRC shell
+   $ opam install nodejs colors_js socket_io
+   #+END_SRC
 
-2) Get the ~socket_io~ package installed on your machine.
+2) Compile ~chat_server.ml~ into a working ~node~ program.
 
-#+BEGIN_SRC shell
-$ git clone https://github.com/bean-code/ocaml-npm-socket-io
-$ cd ocaml-npm-socket-io
-$ opam pin add socket_io . -y
-#+END_SRC
+   #+BEGIN_SRC shell
+   $ cd examples
+   $ make
+   #+END_SRC
 
-3) Get the colors_js package installed on your machine.
+   and open up localhost:8080, you'll have a working ~node~ server.
 
-#+BEGIN_SRC shell
-$ opam install colors_js -y
-#+END_SRC
-
-4) Compile ~chat_server.ml~ into a working ~node~ program. Note that
-   this will install a local node module, the ~socket.io~ module.
-
-#+BEGIN_SRC shell
-$ cd examples
-$ make
-#+END_SRC
-
-and open up localhost:8080, you'll have a working ~node~ server.
-
-(Note that you'll only need to call ~make~ once, afterwards you can
-directly just invoke node with ~node chat_server.js~.)
+   (Note that you'll only need to call ~make~ once, afterwards you can
+   directly just invoke node with ~node chat_server.js~.)
 
 * Issues
 1) ~node~ has a pretty big API so its going to take me a little bit of
