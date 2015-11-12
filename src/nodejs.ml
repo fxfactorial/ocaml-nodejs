@@ -36,8 +36,7 @@ let stringify o =
 let to_js_str s = Js.string s |> Js.Unsafe.inject
 
 (** Turn a JavaScript Object into a Yojson object *)
-let to_json obj =
-  stringify obj |> Yojson.Basic.from_string
+let to_json obj = stringify obj |> Yojson.Basic.from_string
 
 (** Create a JavaScript Object out of an alist *)
 let obj_of_alist a_l =
@@ -1289,5 +1288,22 @@ module Query_string = struct
       default separator ('&') and assignment ('=') characters.*)
   let parse ?(sep="&") ?(eq="=") s : Js.Unsafe.any =
     m raw_js "parse" [|to_js_str s; to_js_str sep; to_js_str eq;|]
+
+end
+
+module Udp_datagram = struct
+
+
+end
+
+module Readline = struct
+
+  class interface raw_js = object
+
+  end
+
+end
+
+module TLS = struct
 
 end
