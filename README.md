@@ -116,15 +116,13 @@ $ cd ocaml-npm-socket-io
 $ opam pin add socket_io . -y
 ```
 
-3.  Get the colors\_js package installed on your machine.
+2.  Get the colors\_js package installed on your machine.
 
 ```shell
-$ git clone https://github.com/bean-code/ocaml-npm-colors-js
-$ cd ocaml-npm-colors-js
-$ opam pin add colors_js . -y
+$ opam install colors_js -y
 ```
 
-4.  Compile `chat_server.ml` into a working `node` program. Note that
+3.  Compile `chat_server.ml` into a working `node` program. Note that
     this will install a local node module, the `socket.io` module.
 
 ```shell
