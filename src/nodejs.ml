@@ -47,6 +47,10 @@ let obj_of_alist a_l =
 let to_string_list g =
   g |> Js.str_array |> Js.to_array |> Array.map Js.to_string |> Array.to_list
 
+(** Turn OCaml list of strings into JavaScript string array *)
+let of_string_list g =
+  g |> Array.of_list |> Array.map Js.string |> Js.array
+
 (** Get all keys of an Object *)
 let keys obj =
   m (Js.Unsafe.variable "Object") "keys" [|obj|]
@@ -65,6 +69,8 @@ let for_each_map ~f obj =
 (* This will crap out at the moment because of int overflow on some
    field *)
 (* let constants = require_module "constants" |> to_json *)
+
+let lookup_mime s = Magic_mime.lookup s
 
 type memory_usage = { rss : int; heap_total : int; heap_used : int; }
 
