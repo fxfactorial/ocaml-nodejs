@@ -1,6 +1,6 @@
 # OASIS_START
-# DO NOT EDIT (digest: 40de907af6e1a7e4e18dc2875dbbcd1c)
-version = "0.5"
+# DO NOT EDIT (digest: 5e6c6f0df89bff731db9d15a0f603bb6)
+version = "0.6"
 description = "js_of_ocaml bindings for nodejs"
 requires = "js_of_ocaml js_of_ocaml.ppx yojson magic-mime"
 archive(byte) = "nodejs.cma"

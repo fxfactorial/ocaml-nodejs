@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "nodejs"
-version: "0.5"
+version: "0.6"
 maintainer: "Edgar Aroutiounian <edgar.factorial@gmail.com>"
 authors: [ "Edgar Aroutiounian <edgar.factorial@gmail.com>" ]
 license: "BSD-3-clause"
@@ -23,10 +23,11 @@ build-test: [
   ["ocaml" "setup.ml" "-test"]
 ]
 depends: [
-  "js_of_ocaml"
+  "js_of_ocaml" {>= "2.6"}
   "oasis" {build & >= "0.4"}
   "ocamlfind" {build}
   "yojson"
+  "magic-mime"
 ]
 
 available: [ ocaml-version >= "4.02.3" ]
