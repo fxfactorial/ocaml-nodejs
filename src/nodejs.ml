@@ -29,14 +29,16 @@ let m = Js.Unsafe.meth_call
 let i = Js.Unsafe.inject
 
 (** Turn a JavaScript Object into a string *)
-let stringify o =
-  m (Js.Unsafe.variable "JSON") "stringify" [|i o|] |> Js.to_string
+let stringify o = Js._JSON##stringify o |> Js.to_string
 
 (** Turn an OCaml string into a JavaScript string *)
 let to_js_str s = Js.string s |> Js.Unsafe.inject
 
 (** Turn a JavaScript Object into a Yojson object *)
 let to_json obj = stringify obj |> Yojson.Basic.from_string
+
+(** Turn Yojson object into JavaScript Object *)
+let of_json j = Js._JSON##parse (j |> Yojson.Basic.to_string |> Js.string)
 
 (** Create a JavaScript Object out of an alist *)
 let obj_of_alist a_l =
@@ -705,26 +707,19 @@ module Http = struct
     (* method send_date *)
     (* method get_header *)
     (* method remove_header *)
-    method write
-        ?(callback : (unit -> unit) option)
-        ?(encoding: string option)
-        chunk : unit =
-      match chunk with
-      | String s ->
-        m raw_js "write" [|to_js_str s|]
+    method write ?(callback : (unit -> unit) option) ?encoding chunk : unit =
+      match (chunk, encoding) with
+      | (String s, Some e) ->
+        m raw_js "write" [|to_js_str s; string_of_encoding e |> to_js_str|]
       | _ -> assert false
 
     (* method add_trailers *)
 
-    method end_
-        ?data
-        ?(encoding: string option)
-        ?(callback : (unit -> unit) option)
-        ()
-      : unit =
-      match data with
-      | Some (String s) ->
-        m raw_js "end" [|to_js_str s|]
+    method end_ ?data ?encoding ?(callback : (unit -> unit) option) () : unit =
+      match (data, encoding) with
+      | (Some (String s), None) -> m raw_js "end" [|to_js_str s|]
+      | (Some (String s), Some e) ->
+        m raw_js "end" [|to_js_str s; string_of_encoding e |> to_js_str|]
       | _ -> assert false
 
     (* method finished *)
