@@ -746,7 +746,7 @@ module Http = struct
 
   class incoming_message raw_js = object
 
-   inherit Stream.readable raw_js as super
+    inherit Stream.readable raw_js
 
     method http_version = raw_js <!> "httpVersion" |> Js.to_string
 
@@ -794,7 +794,7 @@ module Http = struct
 
   class server_response raw_js = object
 
-    inherit Stream.readable raw_js as super
+    inherit Stream.readable raw_js
 
     method on_close (f : (unit -> unit)) : unit =
       m raw_js "on" [| to_js_str "close"; i !@f|]
