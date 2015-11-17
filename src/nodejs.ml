@@ -349,13 +349,13 @@ module Events = struct
 
   class event = object(self : 'self)
 
-    val raw_js = require_module "events"
+    val events_module = require_module "events"
 
     method add_listener s (f : Js.Unsafe.any -> unit) : unit =
-      m raw_js "addListener" [|to_js_str s; i !@ f|]
+      m events_module "addListener" [|to_js_str s; i !@ f|]
 
     method on s (f : Js.Unsafe.any -> unit) : 'self =
-      m raw_js "addListener" [|to_js_str s; i !@ f|]
+      m events_module "addListener" [|to_js_str s; i !@ f|]
 
   end
 
@@ -365,26 +365,25 @@ module Stream = struct
 
   let raw_js = require_module "stream"
 
+  class readable raw = object
 
-  class readable raw_js = object
+    inherit Events.event
 
-    inherit Events.event as event_super
+    method on_data (f : (Buffer.buffer -> unit)) : unit =
+      let wrapped = fun raw_buffer -> f (new Buffer.buffer raw_buffer) in
+      m raw "on" [|to_js_str "data"; i !@wrapped|]
 
-    (* method on_readable  *)
-    (* method on_data (f : (Buffer.buffer -> unit)) : unit = *)
-    (*   let wrapped = fun raw_buffer -> f (new Buffer.buffer raw_buffer) in *)
-    (*   log raw_js; *)
-    (*   m raw_js "on" [|to_js_str "data"; i !@wrapped|] *)
+    method on_close (f : (unit -> unit)) : unit =
+      m raw_js "on" [| to_js_str "close"; i !@f|]
 
     method on_end (f : (unit -> unit)) : unit =
-      m raw_js "on" [|to_js_str "end"; i !@ f|]
+      m raw "on" [|to_js_str "end"; i !@ f|]
 
     (* method on_read *)
 
-    (* Make this better in its return value, harder to type *)
     method read = function
       | None -> (m raw_js "read" [||]) |> Js.to_string
-      | Some (j : int) -> (m raw_js "read" [|i j|]) |> Js.to_string
+      | Some (j : int) -> (m raw "read" [|i j|]) |> Js.to_string
 
   end
 
@@ -669,14 +668,8 @@ module Http = struct
 
   class incoming_message raw_js = object
 
-   (* inherit Stream.readable raw_js as super *)
+   inherit Stream.readable raw_js as super
 
-   method on_data (f : (Buffer.buffer -> unit)) : unit =
-     let wrapped = fun raw_buffer -> f (new Buffer.buffer raw_buffer) in
-     m raw_js "on" [|to_js_str "data"; i !@wrapped|]
-
-    method on_close (f : (unit -> unit)) : unit =
-      m raw_js "on" [| to_js_str "close"; i !@f|]
 
     method http_version = raw_js <!> "httpVersion" |> Js.to_string
 
@@ -815,7 +808,7 @@ module Http = struct
 
   let get url (f : incoming_message -> unit) =
     let wrap_msg = fun raw_msg -> f (new incoming_message raw_msg) in
-    new client_request (m raw_js "get" [|to_js_str url; i  !@wrap_msg|])
+    new client_request (m raw_js "get" [|to_js_str url; i !@wrap_msg|])
 
 end
 
