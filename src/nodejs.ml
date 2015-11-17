@@ -80,8 +80,8 @@ let module_handle = Js.Unsafe.js_expr "module"
     require("package_name"), everything in the resultant object is the
     "public" interface of the library, so to speak. *)
 let exports exps =
-    let obj = obj_of_alist exps in
-    module_handle##.exports := obj
+  let obj = obj_of_alist exps in
+  module_handle##.exports := obj
 
 type memory_usage = { rss : int; heap_total : int; heap_used : int; }
 
@@ -343,20 +343,22 @@ module Buffer = struct
     m raw_js "byteLength" [|to_js_str s;
                             to_js_str (string_of_encoding encoding)|]
 
-
 end
-
 
 module Events = struct
 
-  class event = object
+  class event = object(self : 'self)
 
     val raw_js = require_module "events"
 
-    (* Not sure how to type the listener function *)
-    (* method on_new_listener (f : (string -> Js.)) *)
+    method add_listener s (f : Js.Unsafe.any -> unit) : unit =
+      m raw_js "addListener" [|to_js_str s; i !@ f|]
+
+    method on s (f : Js.Unsafe.any -> unit) : 'self =
+      m raw_js "addListener" [|to_js_str s; i !@ f|]
 
   end
+
 end
 
 module Stream = struct
@@ -365,9 +367,16 @@ module Stream = struct
 
 
   class readable raw_js = object
-    (* method on_readable *)
-    (* method on_data *)
-    (* method on_end *)
+
+    inherit Events.event as event_super
+
+    (* method on_readable  *)
+    method on_data (f : (string -> unit)) : unit =
+      m raw_js "on" [|to_js_str "data"; i !@f|]
+
+    method on_end (f : (unit -> unit)) : unit =
+      m raw_js "on" [|to_js_str "end"; i !@ f|]
+
     (* method on_read *)
 
     (* Make this better in its return value, harder to type *)
@@ -470,27 +479,27 @@ module Dns = struct
     in
 
     match opts with {ip_family = f_opt; dns_hints = l } -> match (f_opt, l) with
-    | (None, []) ->
-      m raw_js "lookup" [|to_js_str host; i !@ wrapped|]
-    | (None, l) ->
-      let with_hints =
-        !!(object%js
-          val hints = List.fold_left ( lor ) 0 (List.map int_of_hint l)
-        end)
-      in
-      m raw_js "lookup" [|to_js_str host; with_hints; i !@ wrapped|]
-    | (Some ip, []) ->
-      let with_ip = !!(object%js val family = int_of_ip_family ip end) in
-      m raw_js "lookup" [|to_js_str host; with_ip; i !@ wrapped|]
+      | (None, []) ->
+        m raw_js "lookup" [|to_js_str host; i !@ wrapped|]
+      | (None, l) ->
+        let with_hints =
+          !!(object%js
+            val hints = List.fold_left ( lor ) 0 (List.map int_of_hint l)
+          end)
+        in
+        m raw_js "lookup" [|to_js_str host; with_hints; i !@ wrapped|]
+      | (Some ip, []) ->
+        let with_ip = !!(object%js val family = int_of_ip_family ip end) in
+        m raw_js "lookup" [|to_js_str host; with_ip; i !@ wrapped|]
 
-    | (Some ip, l) ->
-      let with_both =
-        !!(object%js
-          val family = int_of_ip_family ip
-          val hints = List.fold_left ( lor ) 0 (List.map int_of_hint l)
-        end)
-      in
-      m raw_js "lookup" [|to_js_str host; with_both; i !@ wrapped|]
+      | (Some ip, l) ->
+        let with_both =
+          !!(object%js
+            val family = int_of_ip_family ip
+            val hints = List.fold_left ( lor ) 0 (List.map int_of_hint l)
+          end)
+        in
+        m raw_js "lookup" [|to_js_str host; with_both; i !@ wrapped|]
 
   let lookup_service ~addr ~port
       (f : (Error.error -> string -> string -> unit)) : unit =
@@ -658,6 +667,8 @@ module Http = struct
 
   class incoming_message raw_js = object
 
+    inherit Stream.readable raw_js as super
+
     method on_close (f : (unit -> unit)) : unit =
       m raw_js "on" [| to_js_str "close"; i !@f|]
 
@@ -706,6 +717,8 @@ module Http = struct
   end
 
   class server_response raw_js = object
+
+    inherit Stream.readable raw_js as super
 
     method on_close (f : (unit -> unit)) : unit =
       m raw_js "on" [| to_js_str "close"; i !@f|]
@@ -796,9 +809,26 @@ module Http = struct
   (* let request (f : (incoming_message -> unit)) = *)
   (*   m raw_js "request" [||] *)
 
-  let get url (f : (incoming_message -> unit)) =
-    let g = fun raw -> new incoming_message raw in
-    new client_request (m raw_js "get" [|to_js_str url; i !@ g|])
+  (* let get url (f : (incoming_message -> unit)) = *)
+  (*   let g = fun raw -> new server_response raw in *)
+  (*   new client_request (m raw_js "get" [|to_js_str url; i !@ g|]) *)
+
+  let get url (f : incoming_message -> unit) =
+
+    (* let wrap_msg = fun raw_msg -> new incoming_message raw_msg in *)
+
+      new incoming_message
+        (m raw_js "get" [|to_js_str url; i !@begin fun resp ->
+
+             m resp "on" [|to_js_str "data"; i !@begin fun d ->
+
+                 let b = new Buffer.buffer d in
+
+                 print_endline (b#to_string ())
+
+
+               end|]
+           end|])
 
 end
 
@@ -1120,7 +1150,7 @@ module Puny_code = struct
     let ucs2 = raw_js <!> "ucs2" in
     m ucs2 "decode" [|to_js_str s|] |> Js.to_array
 
-  [@@ocaml.warning "This isn't implemented correctly"]
+    [@@ocaml.warning "This isn't implemented correctly"]
   let of_ucs2_array (ar : int array) =
     let ucs2 = raw_js <!> "ucs2" in
     (* Something wrong is happening in this Array.map *)
@@ -1242,9 +1272,7 @@ module Cluster = struct
       m raw_js "on" [|to_js_str "disconnect"; i !@f|]
 
     method on_exit (f : (int -> signal -> unit)) : unit =
-      let wrapped = fun e_code signal ->
-        f e_code (signal_of_string signal)
-      in
+      let wrapped = fun e_code signal -> f e_code (signal_of_string signal) in
       m raw_js "on" [|to_js_str "exit"; i !@wrapped|]
 
   end
@@ -1266,12 +1294,12 @@ module Cluster = struct
 
     method settings =
       let h = raw_js <!> "settings" in
-      {exec_argv = h <!> "execArgv" |> to_string_list;
-       exec_path = h <!> "exec" |> Js.to_string;
-       exec_argv_worker = h <!> "args" |> to_string_list;
-       silent = h <!> "silent" |> Js.to_bool;
-       uid = h <!> "uid";
-       gid = h <!> "gid"; }
+      { exec_argv = h <!> "execArgv" |> to_string_list;
+        exec_path = h <!> "exec" |> Js.to_string;
+        exec_argv_worker = h <!> "args" |> to_string_list;
+        silent = h <!> "silent" |> Js.to_bool;
+        uid = h <!> "uid";
+        gid = h <!> "gid"; }
 
     method is_master = m raw_js "isMaster" [||] |> Js.to_bool
 
@@ -1282,12 +1310,7 @@ module Cluster = struct
     method fork (env : (string * string) list option) =
       match env with
       | None -> (m raw_js "fork" [||]) |> new worker
-      | Some l ->
-        m raw_js "fork"
-          [| !!(l |> List.map (fun (key, value) -> (key, to_js_str value))
-                |> Array.of_list
-                |> Js.Unsafe.obj) |]
-        |> new worker
+      | Some l -> m raw_js "fork" [| !!(l |> obj_of_alist) |] |> new worker
 
     (** A reference to the current worker object. Not available in the
         master process.*)
