@@ -289,8 +289,6 @@ module Buffer = struct
 
   class buffer raw_js = object(self)
 
-    method raw_buffer : Js.Unsafe.any = raw_js
-
     (** The size of the buffer in bytes. Note that this is not
         necessarily the size of the contents. length refers to the amount
         of memory allocated for the buffer object. It does not change when
@@ -345,17 +343,44 @@ module Buffer = struct
 
 end
 
+type str_or_buff = String of string | Buffer of Buffer.buffer
+
 module Events = struct
 
-  class event = object(self : 'self)
+  class event = object
 
     val events_module = require_module "events"
 
     method add_listener s (f : Js.Unsafe.any -> unit) : unit =
+      m events_module "addListener" [|to_js_str s; i !@f|]
+
+    method on s (f : Js.Unsafe.any -> unit) : unit =
       m events_module "addListener" [|to_js_str s; i !@ f|]
 
-    method on s (f : Js.Unsafe.any -> unit) : 'self =
-      m events_module "addListener" [|to_js_str s; i !@ f|]
+    method once s (f : Js.Unsafe.any -> unit) : unit =
+      m events_module "once" [|to_js_str s; i !@ f|]
+
+    (** Removes a listener from the listener array for the specified
+        event. Caution: changes array indices in the listener array behind
+        the listener.*)
+    method remove_listener s (f : Js.Unsafe.any -> unit) : unit =
+      m events_module "removeListener" [|to_js_str s; i !@f|]
+
+    method remove_all_listeners s : unit =
+      match s with
+      | None -> m events_module "removeListener" [||]
+      | Some event -> m events_module "removeListener" [|to_js_str event|]
+
+    method set_max_listeners (n : int) : unit =
+      m events_module "setMaxListeners" [|i n;|]
+
+    method get_max_listeners : int = m events_module "getMaxListeners" [||]
+
+    method get_default_max_listeners : int =
+      events_module <!> "defaultMaxListeners"
+
+    method set_default_max_listeners (n : int) =
+      Js.Unsafe.set events_module "defaultMaxListeners" n
 
   end
 
@@ -369,21 +394,75 @@ module Stream = struct
 
     inherit Events.event
 
-    method on_data (f : (Buffer.buffer -> unit)) : unit =
-      let wrapped = fun raw_buffer -> f (new Buffer.buffer raw_buffer) in
-      m raw "on" [|to_js_str "data"; i !@wrapped|]
+    method on_readable (f : (unit -> unit)) : unit =
+      m raw "on" [|to_js_str "readable"; i !@f|]
 
-    method on_close (f : (unit -> unit)) : unit =
-      m raw_js "on" [| to_js_str "close"; i !@f|]
+    method on_data (f : (str_or_buff -> unit)) : unit =
+      let wrapped = fun raw_buffer ->
+        if (Js.typeof raw_buffer |> Js.to_string) <> "string"
+        then f (Buffer (new Buffer.buffer raw_buffer))
+        else f (String (raw_buffer |> Js.to_string))
+      in
+      m raw "on" [|to_js_str "data"; i !@wrapped|]
 
     method on_end (f : (unit -> unit)) : unit =
       m raw "on" [|to_js_str "end"; i !@ f|]
 
-    (* method on_read *)
+    method on_close (f : (unit -> unit)) : unit =
+      m raw "on" [|to_js_str "close"; i !@f|]
 
+    method on_error (f : Error.error -> unit) : unit =
+      let g = fun raw_error -> f (new Error.error raw_error) in
+      m raw "on" [|to_js_str "error"; i !@g|]
+
+    (* This is incorrect *)
     method read = function
       | None -> (m raw_js "read" [||]) |> Js.to_string
       | Some (j : int) -> (m raw "read" [|i j|]) |> Js.to_string
+
+    method set_encoding e : unit =
+      m raw "setEncoding" [|string_of_encoding e |> to_js_str|]
+
+    method resume : unit = m raw "resume" [||]
+
+    method pause : unit = m raw "pause" [||]
+
+    method is_paused = m raw "isPaused" [||] |> Js.to_bool
+
+  end
+
+  class writable raw_js = object
+
+    inherit Events.event
+
+    method on_drain (f : unit -> unit) : unit =
+      m raw_js "on" [|to_js_str "drain"; i !@f|]
+
+    method on_finish (f : unit -> unit) : unit =
+      m raw_js "on" [|to_js_str "finish"; i !@f|]
+
+    method on_pipe (f : readable -> unit) : unit =
+      let g = fun r -> f (new readable r) in
+      m raw_js "on" [|to_js_str "pipe"; i !@g|]
+
+    method on_unpipe (f : readable -> unit) : unit =
+      let g = fun r -> f (new readable r) in
+      m raw_js "on" [|to_js_str "unpipe"; i !@g|]
+
+    (* method on_error *)
+    method cork : unit = m raw_js "cork" [||]
+
+    method uncork : unit = m raw_js "uncork" [||]
+
+    method set_default_encoding e : unit =
+      m raw_js "setDefaultEncoding" [|string_of_encoding e |> to_js_str|]
+
+  end
+
+  class duplex r = object
+
+    inherit writable r
+    inherit readable r
 
   end
 
@@ -543,7 +622,6 @@ module Net = struct
 
 end
 
-type str_or_buff = String of string | Buffer of Buffer.buffer
 
 module Child_process = struct
 
@@ -670,7 +748,6 @@ module Http = struct
 
    inherit Stream.readable raw_js as super
 
-
     method http_version = raw_js <!> "httpVersion" |> Js.to_string
 
     method headers =
@@ -768,6 +845,8 @@ module Http = struct
   end
 
   class server handler = object(self)
+
+    inherit Events.event
 
     val raw_js_server =
       m (require_module "http") "createServer" [|i !@handler|]
