@@ -74,6 +74,15 @@ let for_each_map ~f obj =
 
 let lookup_mime s = Magic_mime.lookup s
 
+let module_handle = Js.Unsafe.js_expr "module"
+
+(** Provide a package that can be loaded with a
+    require("package_name"), everything in the resultant object is the
+    "public" interface of the library, so to speak. *)
+let exports exps =
+    let obj = obj_of_alist exps in
+    module_handle##.exports := obj
+
 type memory_usage = { rss : int; heap_total : int; heap_used : int; }
 
 type ip_family = Ip4 | Ip6
@@ -620,6 +629,26 @@ module Http = struct
                  Trace | Unlock | Unsubscribe
 
 
+  let raw_js = require_module "http"
+
+  (* type req_opts = *)
+  (*   { protocol : string option; *)
+  (*     family : ip_family list; *)
+  (*     local_address : string option; *)
+  (*     connect_to : [`Socket_path of string *)
+  (*                  | `Internet of (string * int)]; *)
+  (*     method_ : methods; *)
+  (*     path : string; *)
+  (*     headers : (string * string) list; *)
+  (*     auth : string option; *)
+  (*     agent : [`Agent of Js.Unsafe.any | `Do_use of bool] option; *)
+  (*   } *)
+
+  (* let default_req_opt = *)
+  (*   { protocol = Some "http"; family = [Ip4; Ip6]; local_address = None; *)
+  (*     method_ = Get; path = "/"; headers = []; auth = None; *)
+  (*     agent = option; } *)
+
   let status_codes =
     (require_module "http") <!> "STATUS_CODES" |> to_json
     |> Yojson.Basic.Util.to_assoc
@@ -757,13 +786,19 @@ module Http = struct
       let wrapped = fun incoming -> f (new incoming_message incoming) in
       m raw_js "on" [|to_js_str "response"; i !@wrapped|]
 
-    (* What is the type of socket *)
-    (* method on_socket (f : (so)) *)
+    (* method on_data  *)
 
     method on_connect
         (f : (server_response -> Net.socket -> Js.Unsafe.any)) : unit =
       ()
   end
+
+  (* let request (f : (incoming_message -> unit)) = *)
+  (*   m raw_js "request" [||] *)
+
+  let get url (f : (incoming_message -> unit)) =
+    let g = fun raw -> new incoming_message raw in
+    new client_request (m raw_js "get" [|to_js_str url; i !@ g|])
 
 end
 
