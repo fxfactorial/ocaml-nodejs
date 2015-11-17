@@ -371,8 +371,10 @@ module Stream = struct
     inherit Events.event as event_super
 
     (* method on_readable  *)
-    method on_data (f : (string -> unit)) : unit =
-      m raw_js "on" [|to_js_str "data"; i !@f|]
+    (* method on_data (f : (Buffer.buffer -> unit)) : unit = *)
+    (*   let wrapped = fun raw_buffer -> f (new Buffer.buffer raw_buffer) in *)
+    (*   log raw_js; *)
+    (*   m raw_js "on" [|to_js_str "data"; i !@wrapped|] *)
 
     method on_end (f : (unit -> unit)) : unit =
       m raw_js "on" [|to_js_str "end"; i !@ f|]
@@ -667,7 +669,11 @@ module Http = struct
 
   class incoming_message raw_js = object
 
-    inherit Stream.readable raw_js as super
+   (* inherit Stream.readable raw_js as super *)
+
+   method on_data (f : (Buffer.buffer -> unit)) : unit =
+     let wrapped = fun raw_buffer -> f (new Buffer.buffer raw_buffer) in
+     m raw_js "on" [|to_js_str "data"; i !@wrapped|]
 
     method on_close (f : (unit -> unit)) : unit =
       m raw_js "on" [| to_js_str "close"; i !@f|]
@@ -799,8 +805,6 @@ module Http = struct
       let wrapped = fun incoming -> f (new incoming_message incoming) in
       m raw_js "on" [|to_js_str "response"; i !@wrapped|]
 
-    (* method on_data  *)
-
     method on_connect
         (f : (server_response -> Net.socket -> Js.Unsafe.any)) : unit =
       ()
@@ -809,26 +813,9 @@ module Http = struct
   (* let request (f : (incoming_message -> unit)) = *)
   (*   m raw_js "request" [||] *)
 
-  (* let get url (f : (incoming_message -> unit)) = *)
-  (*   let g = fun raw -> new server_response raw in *)
-  (*   new client_request (m raw_js "get" [|to_js_str url; i !@ g|]) *)
-
   let get url (f : incoming_message -> unit) =
-
-    (* let wrap_msg = fun raw_msg -> new incoming_message raw_msg in *)
-
-      new incoming_message
-        (m raw_js "get" [|to_js_str url; i !@begin fun resp ->
-
-             m resp "on" [|to_js_str "data"; i !@begin fun d ->
-
-                 let b = new Buffer.buffer d in
-
-                 print_endline (b#to_string ())
-
-
-               end|]
-           end|])
+    let wrap_msg = fun raw_msg -> f (new incoming_message raw_msg) in
+    new client_request (m raw_js "get" [|to_js_str url; i  !@wrap_msg|])
 
 end
 
