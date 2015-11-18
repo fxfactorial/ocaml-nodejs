@@ -292,6 +292,8 @@ module Buffer = struct
 
   class buffer raw_js = object(self)
 
+    method unsafe_raw : Js.Unsafe.any = raw_js
+
     (** The size of the buffer in bytes. Note that this is not
         necessarily the size of the contents. length refers to the amount
         of memory allocated for the buffer object. It does not change when
@@ -398,6 +400,7 @@ module Stream = struct
 
     inherit Events.event
 
+    (** DO NOT TOUCH THIS *)
     method unsafe_raw = r
 
     method pipe ?(end_=true) (dest : duplex) =
@@ -420,7 +423,7 @@ module Stream = struct
     method on_data (f : (str_or_buff -> unit)) : unit =
       let wrapped = fun raw_buffer ->
         if (Js.typeof raw_buffer |> Js.to_string) <> "string"
-        then f (Buffer (new Buffer.buffer raw_buffer))
+        then f (Buffer (new Buffer.buffer (i raw_buffer)))
         else f (String (raw_buffer |> Js.to_string))
       in
       m raw "on" [|to_js_str "data"; i !@wrapped|]
@@ -438,7 +441,6 @@ module Stream = struct
     method is_paused = m raw "isPaused" [||] |> Js.to_bool
 
     method pause : unit = m raw "pause" [||]
-
 
     (* This is incorrect *)
     method read = function
@@ -1153,36 +1155,92 @@ module Zlib = struct
 
   class deflate raw = object
 
+    inherit Stream.duplex raw
+
   end
 
-  class deflate_raw raw_obj = object
+  class deflate_raw raw = object
+
+    inherit Stream.duplex raw
 
   end
 
   class gunzip raw = object
 
+    inherit Stream.duplex raw
+
   end
 
   class gzip raw = object
 
-    inherit Stream.writable raw
+    inherit Stream.duplex raw
 
   end
 
   class inflate raw = object
 
+    inherit Stream.duplex raw
+
   end
 
-  class inflate_raw raw_obj = object
+  class inflate_raw raw = object
+
+    inherit Stream.duplex raw
 
   end
 
   class unzip raw = object
 
+    inherit Stream.duplex raw
+
   end
 
-  let create_gzip () =
-    new gzip (m raw_js "createGzip" [||])
+  let create_deflate () = new deflate (m raw_js "createDeflate" [||])
+
+  let create_deflate_raw () =
+    new deflate_raw (m raw_js "createDeflateRaw" [||])
+
+  let create_gunzip () = new gunzip (m raw_js "createGunzip" [||])
+
+  let create_gzip () = new gzip (m raw_js "createGzip" [||])
+
+  let create_inflate () = new inflate (m raw_js "createInflate" [||])
+
+  let create_inflate_raw () =
+    new inflate_raw (m raw_js "createInflateRaw" [||])
+
+  let create_unzip () = new unzip (m raw_js "createUnzip" [||])
+
+  (* TODO Write the Async Versions and the options object *)
+  let deflate_sync input =
+    (match input with
+     | String s -> m raw_js "deflateSync" [|to_js_str s|]
+     | Buffer b -> m raw_js "deflateSync" [|i b#unsafe_raw|])
+    |> new Buffer.buffer
+
+  let deflate_raw_sync input =
+    (match input with
+     | String s -> m raw_js "deflateRawSync" [|to_js_str s|]
+     | Buffer b -> m raw_js "deflateRawSync" [|i b#unsafe_raw|])
+    |> new Buffer.buffer
+
+  let gunzip_sync input =
+    (match input with
+     | String s -> m raw_js "gunzipSync" [|to_js_str s|]
+     | Buffer b -> m raw_js "gunzipSync" [|i b#unsafe_raw|])
+    |> new Buffer.buffer
+
+  let inflate_sync input =
+    (match input with
+     | String s -> m raw_js "inflateSync" [|to_js_str s|]
+     | Buffer b -> m raw_js "inflateSync" [|i b#unsafe_raw|])
+    |> new Buffer.buffer
+
+  let unzip_sync input =
+    (match input with
+     | String s -> m raw_js "unzipSync" [|to_js_str s|]
+     | Buffer b -> m raw_js "unzipSync" [|i b#unsafe_raw|])
+    |> new Buffer.buffer
 
 end
 
