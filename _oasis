@@ -1,6 +1,6 @@
 OASISFormat: 0.4
 Name:        nodejs
-Version:     0.6
+Version:     0.7
 Synopsis:    js_of_ocaml bindings for nodejs
 Authors:     Edgar Aroutiounian <edgar.factorial@gmail.com>
 Maintainers: Edgar Aroutiounian <edgar.factorial@gmail.com>
@@ -21,4 +21,4 @@ Library nodejs
   Modules:      Nodejs
   CompiledObject: byte
   BuildDepends:
-    js_of_ocaml, js_of_ocaml.ppx, yojson, magic-mime
+    js_of_ocaml.ppx, yojson, magic-mime
