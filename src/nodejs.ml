@@ -40,6 +40,9 @@ let to_json obj = stringify obj |> Yojson.Basic.from_string
 (** Turn Yojson object into JavaScript Object *)
 let of_json j = Js._JSON##parse (j |> Yojson.Basic.to_string |> Js.string)
 
+(** Turn a string into a JSON object *)
+let json_of_string s = Js._JSON##parse (s |> Js.string)
+
 (** Create a JavaScript Object out of an alist *)
 let obj_of_alist a_l =
   List.map (fun (key, value) -> (key, Js.Unsafe.inject value)) a_l
@@ -273,13 +276,13 @@ module Error = struct
 
     method code : int = raw_js <!> "code"
 
+    method message = raw_js <!> "message" |> Js.to_string
+
   end
 
 end
 
-
 module Buffer = struct
-
 
   type buffer_init = Size of int
                    | Array of int
@@ -316,8 +319,9 @@ module Buffer = struct
     (** Returns a JSON-representation of the Buffer
         instance. JSON.stringify implicitly calls this function when
         stringifying a Buffer instance. *)
-    method to_json =
-      m raw_js "toJSON" [||] |> to_json
+    (* TODO Something buggy with this *)
+    (* method to_json = *)
+    (*   m raw_js "toJSON" [||] |> to_json *)
 
   end
 
@@ -390,9 +394,25 @@ module Stream = struct
 
   let raw_js = require_module "stream"
 
-  class readable raw = object
+  class duplex r = object
 
     inherit Events.event
+
+    method unsafe_raw = r
+
+    method pipe ?(end_=true) (dest : duplex) =
+      (if end_ then m r "pipe" [|dest#unsafe_raw|]
+       else begin
+         let obj = object %js end in
+         Js.Unsafe.set obj "end" (Js.bool false);
+         m r "pipe" [|dest#unsafe_raw;i (object%js end) |]
+       end)
+      |> new duplex
+
+  end
+  and readable raw = object
+
+    inherit duplex raw
 
     method on_readable (f : (unit -> unit)) : unit =
       m raw "on" [|to_js_str "readable"; i !@f|]
@@ -415,6 +435,11 @@ module Stream = struct
       let g = fun raw_error -> f (new Error.error raw_error) in
       m raw "on" [|to_js_str "error"; i !@g|]
 
+    method is_paused = m raw "isPaused" [||] |> Js.to_bool
+
+    method pause : unit = m raw "pause" [||]
+
+
     (* This is incorrect *)
     method read = function
       | None -> (m raw_js "read" [||]) |> Js.to_string
@@ -425,15 +450,14 @@ module Stream = struct
 
     method resume : unit = m raw "resume" [||]
 
-    method pause : unit = m raw "pause" [||]
-
-    method is_paused = m raw "isPaused" [||] |> Js.to_bool
-
   end
 
-  class writable raw_js = object
+  and writable raw_js = object
 
-    inherit Events.event
+    (* inherit Events.event *)
+    inherit duplex raw_js
+
+    (* method unsafe_raw = raw_js *)
 
     method on_drain (f : unit -> unit) : unit =
       m raw_js "on" [|to_js_str "drain"; i !@f|]
@@ -456,13 +480,6 @@ module Stream = struct
 
     method set_default_encoding e : unit =
       m raw_js "setDefaultEncoding" [|string_of_encoding e |> to_js_str|]
-
-  end
-
-  class duplex r = object
-
-    inherit writable r
-    inherit readable r
 
   end
 
@@ -895,30 +912,89 @@ module Fs = struct
 
   type flag = Read | Write | Read_write | Append
 
+  let fs_module = require_module "fs"
+
   let string_of_flag = function
     | Read -> "r"
     | Write -> "w"
     | _ -> "r"
 
-  type options = { encoding : string option; flag : flag option }
+  class fs_watcher raw_js = object
 
-  let read_file
-      ?options
-      ~path:(path : string)
-      (callback : (Error.error -> string -> unit)) =
-    let fs = require_module "fs" in
-    let path = Js.string path in
-    let callback = !@callback in
-    (* Things given to inject need to already be Js.t objects *)
-    match options with
+    inherit Events.event
+
+    method on_change (f : string -> string -> unit) : unit =
+      let g = fun e b -> f (Js.to_string e) (Js.to_string b) in
+      m raw_js "on" [|to_js_str "change"; i !@g|]
+
+    method close : unit = m raw_js "close" [||]
+
+  end
+
+  (* TODO Add more options *)
+  let watch f =
+    new fs_watcher (m fs_module "watch" [|to_js_str f|])
+
+  type options = { encoding : encoding; flag : flag; }
+
+  (* let read_file ?opts ~path (callback : Error.error -> string -> unit) : unit = *)
+  (*   match opts with *)
+  (*   | None -> *)
+  (*     m fs_module "readFile" [|to_js_str path; i callback|] *)
+  (*   | Some opts -> match opts with *)
+  (*     | {encoding = None ; flag = None } -> *)
+  (*       m fs_module "readFile" [|to_js_str path; i callback|] *)
+  (*     | {encoding = Some e; flag = None } -> *)
+  (*       m fs_module "readFile" [|to_js_str path; i e; i callback|] *)
+  (*     | _ -> () *)
+
+  class read_stream raw_js = object
+
+    inherit Stream.readable raw_js
+
+    method on_open (f : int -> unit) : unit =
+      m raw_js "on" [|to_js_str "open"; i !@f|]
+
+  end
+
+  class write_stream raw_js = object
+
+    inherit Stream.writable raw_js
+
+    method on_open (f : int -> unit) : unit =
+      m raw_js "on" [|to_js_str "open"; i !@f|]
+
+    method bytes_written : int = raw_js <!> "bytesWritten"
+
+  end
+
+  (* TODO Get the handle for fd, whatever it is? *)
+  type read_stream_opts = { flags : flag;
+                            encoding: encoding;
+                            (* file_descriptor : *)
+                            mode : int;
+                            auto_close : bool; }
+
+  let create_read_stream ?opts path =
+    m fs_module "createReadStream" [|to_js_str path|]
+    |> new read_stream
+
+  let create_write_stream ?opts path =
+    m fs_module "createWriteStream" [|to_js_str path|]
+    |> new write_stream
+
+  let read_file_sync ?opts file =
+    match opts with
     | None ->
-      m fs "readFile" [|i path; i callback|]
-    | Some opts -> match opts with
-      | {encoding = None ; flag = None } ->
-        m fs "readFile" [|i path; i callback|]
-      | {encoding = Some e; flag = None } ->
-        m fs "readFile" [|i path; i e; i callback|]
-      | _ -> ()
+      Buffer (new Buffer.buffer (m fs_module "readFileSync" [|to_js_str file|]))
+    | Some { encoding = e; flag; } ->
+      let ar_arg = [|to_js_str file; i (object%js
+                       val encoding = string_of_encoding e |> Js.string
+                       val flag = string_of_flag flag |> Js.string
+                     end)|]
+      in
+      String (m fs_module "readFileSync" ar_arg |> Js.to_string)
+
 
 end
 
@@ -1064,30 +1140,49 @@ end
 
 module Zlib = struct
 
-  class zlib = object
+  let raw_js = require_module "zlib"
 
-    val raw_js = require_module "zlib"
+  (* class zlib raw = object *)
 
-    (* method create_gzip *)
+  (*   method flush *)
+  (*   method params *)
+  (*   method reset *)
+  (*   method create_de *)
 
-    (* method create_gunzip *)
+  (* end *)
 
-    (* method create_deflate *)
+  class deflate raw = object
 
-    (* method create_inflate *)
-
-    (* method create_deflate_raw *)
-
-    (* method create_inflate_raw *)
-
-    (* method create_unzip *)
-
-    (* method deflate_sync *)
-
-    (* method deflate_async *)
-
-    (* method  *)
   end
+
+  class deflate_raw raw_obj = object
+
+  end
+
+  class gunzip raw = object
+
+  end
+
+  class gzip raw = object
+
+    inherit Stream.writable raw
+
+  end
+
+  class inflate raw = object
+
+  end
+
+  class inflate_raw raw_obj = object
+
+  end
+
+  class unzip raw = object
+
+  end
+
+  let create_gzip () =
+    new gzip (m raw_js "createGzip" [||])
 
 end
 
@@ -1425,3 +1520,16 @@ end
 module TLS = struct
 
 end
+
+module Https = struct
+
+  let raw_js = require_module "https"
+
+  let get url (f : Http.incoming_message -> unit) =
+    let wrap_msg = fun raw_msg -> f (new Http.incoming_message raw_msg) in
+    new Http.client_request (m raw_js "get" [|to_js_str url; i !@wrap_msg|])
+
+end
+
+let ( >|> ) (l : #Stream.duplex) (r : #Stream.duplex) =
+  l#pipe (r :> Stream.duplex)
