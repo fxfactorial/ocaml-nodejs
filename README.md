@@ -1,11 +1,85 @@
 These are [js\_of\_ocaml](https://github.com/ocsigen/js_of_ocaml) bindings to [nodejs](https://github.com/nodejs/node)
 
 Get all the power of the amazing `node` ecosystem with the sanity and
-type safety of `OCaml`.
+type safety of `OCaml`. See examples and a working chat server at the
+end.
 
 ```shell
 $ opam install nodejs
 ```
+
+# Examples
+
+**Create a file stream, gzip it, write it**
+
+```ocaml
+1  let _ =
+2    Fs.create_read_stream "code.ml" >|>
+3    Zlib.create_gzip () >|>
+4    Fs.create_write_stream "NEWCODE_TEST.ml"
+```
+
+**Do an HTTP get request**
+
+```ocaml
+let () =
+  try
+    ignore begin
+
+      Nodejs.Https.get api_source begin fun incoming ->
+        let collect = ref [] in
+
+        incoming#on_data begin fun b ->
+          match b with
+          | Nodejs.String s -> collect := s :: !collect
+          | Nodejs.Buffer b -> collect := b#to_string () :: !collect
+
+        end;
+
+        incoming#on_end (fun () ->
+            print_endline (String.concat "" (List.rev !collect)));
+
+      end
+    end
+  with Js.Error e -> print_endline (e##.message |> Js.to_string)
+```
+
+**Create a site and render directly from jade templates**
+
+```ocaml
+open Nodejs
+
+let () =
+  let exp = new Express.express in
+  let app = new Express.app ~existing:None in
+
+  app#set_app_value (`View_engine "jade");
+  app#use (exp#static ".");
+  app#get ~path:"/" (fun _ res -> res#render "index.jade");
+
+  app#listen ~port:8080
+```
+
+**Create a raw server from the Net module**
+
+```ocaml
+let () =
+  let server = Net.create_server ~conn_listener:begin fun sock ->
+      sock#on_end (fun () -> print_endline "client disconnected");
+      sock#write "Hello\r\n";
+      sock >|> sock |> ignore
+    end ()
+  in
+  server#listen ~port:8124 begin fun () ->
+    let info = server#address in
+    print_endline info.Net.address;
+    print_endline (info.Net.ip_family |> string_of_ip);
+    print_endline (info.Net.port |> string_of_int);
+    print_endline "started server"
+  end
+```
+
+# Working Chat Server
 
 Working Chat Server
 ![img](./node_server_working.gif)

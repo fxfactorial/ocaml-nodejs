@@ -7,11 +7,80 @@
 These are [[https://github.com/ocsigen/js_of_ocaml][js_of_ocaml]] bindings to [[https://github.com/nodejs/node][nodejs]]
 
 Get all the power of the amazing ~node~ ecosystem with the sanity and
-type safety of ~OCaml~.
+type safety of ~OCaml~. See examples and a working chat server at the
+end.
 
 #+BEGIN_SRC shell
 $ opam install nodejs
 #+END_SRC
+
+* Examples
+*Create a file stream, gzip it, write it*
+#+BEGIN_SRC ocaml -n
+let _ =
+  Fs.create_read_stream "code.ml" >|>
+  Zlib.create_gzip () >|>
+  Fs.create_write_stream "NEWCODE_TEST.ml"
+#+END_SRC
+
+*Do an HTTP get request*
+#+BEGIN_SRC ocaml
+let () =
+  try
+    ignore begin
+
+      Nodejs.Https.get api_source begin fun incoming ->
+        let collect = ref [] in
+
+        incoming#on_data begin fun b ->
+          match b with
+          | Nodejs.String s -> collect := s :: !collect
+          | Nodejs.Buffer b -> collect := b#to_string () :: !collect
+
+        end;
+
+        incoming#on_end (fun () ->
+            print_endline (String.concat "" (List.rev !collect)));
+
+      end
+    end
+  with Js.Error e -> print_endline (e##.message |> Js.to_string)
+#+END_SRC
+
+*Create a site and render directly from jade templates*
+#+BEGIN_SRC ocaml
+open Nodejs
+
+let () =
+  let exp = new Express.express in
+  let app = new Express.app ~existing:None in
+
+  app#set_app_value (`View_engine "jade");
+  app#use (exp#static ".");
+  app#get ~path:"/" (fun _ res -> res#render "index.jade");
+
+  app#listen ~port:8080
+#+END_SRC
+
+*Create a raw server from the Net module*
+#+BEGIN_SRC ocaml
+let () =
+  let server = Net.create_server ~conn_listener:begin fun sock ->
+      sock#on_end (fun () -> print_endline "client disconnected");
+      sock#write "Hello\r\n";
+      sock >|> sock |> ignore
+    end ()
+  in
+  server#listen ~port:8124 begin fun () ->
+    let info = server#address in
+    print_endline info.Net.address;
+    print_endline (info.Net.ip_family |> string_of_ip);
+    print_endline (info.Net.port |> string_of_int);
+    print_endline "started server"
+  end
+#+END_SRC
+
+* Working Chat Server
 
 Working Chat Server
 [[./node_server_working.gif]]
