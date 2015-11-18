@@ -606,41 +606,50 @@ module Dns = struct
 
 end
 
-
 module Net = struct
 
-  (* type socket_opts = { file_descriptor:
-                          allow_half_open : bool;
-                          readable : bool;
-                          writable : bool;
-     } *)
+  let raw_net_module = require_module "net"
 
-  type tcp_opts = { port : int;
-                    host : string option ;
-                    local_address: string;
-                    local_port : string;
-                    family : int option;
-                    lookup : (unit -> unit) option; }
+  type server_opts = { allow_half_open : bool; pause_on_connect : bool; }
 
+  class server raw_js = object
+
+    method listen ~port:(p : int) (f : (unit -> unit)) : unit =
+      m raw_js "listen" [|i p; i !@f|]
+
+  end
 
   class socket raw_js = object
 
-    (* INCORRECT SIGNATURE *)
-    method peer_certificate : unit = m raw_js "getPeerCertificate" [||]
+    inherit Events.event
+    inherit Stream.duplex raw_js
+
+    method on_end (f : (unit -> unit)) : unit =
+      m raw_js "on" [|to_js_str "end"; i !@f|]
+
+    method write s : unit = m raw_js "write" [|to_js_str s|]
 
   end
 
-  class net = object
-
-    val raw_js = require_module "net"
-
-    (* method create_server *)
-
-  end
-
+  let create_server ?opts ?(conn_listener : (socket -> unit) option) () =
+    let obj_of_s_opt {allow_half_open; pause_on_connect; } =
+      !!(object%js
+        val allowHalfOpen = allow_half_open
+        val pauseOnConnect = pause_on_connect
+      end)
+    in
+    match (opts, conn_listener) with
+    | None, None -> m raw_net_module "createServer" [||] |> new server
+    | Some o, None ->
+      m raw_net_module "createServer" [|obj_of_s_opt o|] |> new server
+    | None, Some cb ->
+      let g = fun raw_s -> cb (new socket raw_s) in
+      m raw_net_module "createServer" [|i !@g|] |> new server
+    | Some o, Some cb ->
+      let g = fun raw_s -> cb (new socket raw_s) in
+      m raw_net_module "createServer" [|obj_of_s_opt o; i !@g|] |> new server
 
 end
-
 
 module Child_process = struct
 
@@ -1576,6 +1585,24 @@ module Readline = struct
 end
 
 module TLS = struct
+
+  let raw_tls_module = require_module "tls"
+
+  class secure_pair raw_js = object
+
+    inherit Events.event
+
+    method on_secure (f : unit -> unit) : unit =
+      m raw_js "on" [|to_js_str "secure"; i !@f|]
+
+  end
+
+  class server raw_js = object
+
+    inherit Net.server raw_js
+
+  end
+
 
 end
 
