@@ -98,6 +98,12 @@ type platform = Darwin | Freebsd | Linux | Sunos | Win32
 let int_of_ip_family = function
   | Ip4 -> 4 | Ip6 -> 6
 
+let ip_of_string = function
+  | "IPv4" -> Ip4 | "IPv6" -> Ip6 | _ -> assert false
+
+let string_of_ip = function
+  | Ip4 -> "IPv4" | Ip6 -> "Ipv6"
+
 let ip_of_int = function
   | 4 -> Ip4 | 6 -> Ip6 | _ -> assert false
 
@@ -612,24 +618,138 @@ module Net = struct
 
   type server_opts = { allow_half_open : bool; pause_on_connect : bool; }
 
+  type address = { port : int; ip_family: ip_family; address : string; }
+
   class server raw_js = object
+
+    method on_close (f : unit -> unit) : unit =
+      m raw_js "on" [|to_js_str "close"; i !@f|]
+
+    method on_connection (f : socket -> unit) : unit =
+      let g = fun r -> f (new socket r) in
+      m raw_js "on" [|to_js_str "connection"; i !@g|]
+
+    (* method on_error  *)
+
+    method on_listening (f : unit -> unit) : unit =
+      m raw_js "on" [|to_js_str "listening"; i !@f|]
+
+    method address =
+      let h = m raw_js "address" [||] in
+      { port = h <!> "port";
+        ip_family = h <!> "family" |> Js.to_string |> ip_of_string;
+        address = h <!> "address" |> Js.to_string; }
 
     method listen ~port:(p : int) (f : (unit -> unit)) : unit =
       m raw_js "listen" [|i p; i !@f|]
 
   end
 
-  class socket raw_js = object
+  and socket raw_js = object
 
     inherit Events.event
     inherit Stream.duplex raw_js
+    inherit Stream.readable raw_js
 
-    method on_end (f : (unit -> unit)) : unit =
-      m raw_js "on" [|to_js_str "end"; i !@f|]
+    method on_connect (f : unit -> unit) : unit =
+      m raw_js "on" [|to_js_str "connect"; i !@f|]
+
+    (* method on_lookup () *)
+    method on_timeout (f : unit -> unit) : unit =
+      m raw_js "on" [|to_js_str "timeout"; i !@f|]
 
     method write s : unit = m raw_js "write" [|to_js_str s|]
 
+    method address =
+      let h = m raw_js "address" [||] in
+      { port = h <!> "port";
+        ip_family = h <!> "family" |> Js.to_string |> ip_of_string;
+        address = h <!> "address" |> Js.to_string; }
+
+    (** Net.socket has the property that socket#write always
+        works. This is to help users get up and running quickly. The
+        computer cannot always keep up with the amount of data that is
+        written to a socket - the network connection simply might be too
+        slow. Node.js will internally queue up the data written to a
+        socket and send it out over the wire when it is
+        possible. (Internally it is polling on the socket's file
+        descriptor for being writable).
+
+        The consequence of this internal buffering is that memory may
+        grow. This property shows the number of characters currently
+        buffered to be written. (Number of characters is approximately
+        equal to the number of bytes to be written, but the buffer may
+        contain strings, and the strings are lazily encoded, so the
+        exact number of bytes is not known.)
+
+        Users who experience large or growing bufferSize should
+        attempt to "throttle" the data flows in their program with
+        #pause and #resume. *)
+    method buffer_size : int = raw_js <!> "bufferSize"
+
+    method bytes_read : int = raw_js <!> "bytesRead"
+
+    method bytes_written : int = raw_js <!> "bytesWritten"
+
+    (* method connect  *)
+
+    method destory : unit = m raw_js "destroy" [||]
+
+    method remote_address = raw_js <!> "remoteAddress" |> Js.to_string
+
+    method remote_family =
+      raw_js <!> "remoteFamily" |> Js.to_string |> ip_of_string
+
+    method remote_port : int = raw_js <!> "port"
+
   end
+
+  type socket_opts = { port : int;
+                       host : string option;
+                       local_address : string option;
+                       local_port : int option;
+                       ip_family : ip_family option;
+                       (* This lookup signature is incorrect *)
+                       lookup : (unit -> unit) option;
+                       path : string option; }
+
+  let obj_of_socket_opts
+      { port; host; local_address; local_port; ip_family; lookup; path; } =
+    let h = !!(object%js
+        val port = port
+        val host =
+          (match host with None -> "localhost" | Some s -> s) |> Js.string
+        val family =
+          match ip_family with None -> 4 | Some ip -> int_of_ip_family ip
+      end)
+    in
+    (match local_address with
+     | None -> ()
+     | Some addr -> Js.Unsafe.set h "localAddress" (Js.string addr));
+    (match local_port with
+     | None -> ()
+     | Some j -> Js.Unsafe.set h "localPort" j);
+    (match lookup with
+     | None -> ()
+     | Some f -> Js.Unsafe.set h "lookup" !@f);
+    (match path with
+     | None -> ()
+     | Some s -> Js.Unsafe.set h "path" (Js.string s));
+    h
+
+  let connect
+      ?(conn_listener : (unit -> unit) option)
+      (s_opts : [`Path of string | `Opts of socket_opts]) =
+    (match s_opts, conn_listener with
+     | `Path p, None ->
+       m raw_net_module "connect" [|to_js_str p|]
+     | `Opts s_opts, None ->
+       m raw_net_module "connect" [|obj_of_socket_opts s_opts|]
+     | `Path p, Some f ->
+       m raw_net_module "connect" [|to_js_str p; i !@f|]
+     | `Opts s_opts, Some f ->
+       m raw_net_module "connect" [|obj_of_socket_opts s_opts; i !@f|])
+    |> new socket
 
   let create_server ?opts ?(conn_listener : (socket -> unit) option) () =
     let obj_of_s_opt {allow_half_open; pause_on_connect; } =
@@ -638,16 +758,17 @@ module Net = struct
         val pauseOnConnect = pause_on_connect
       end)
     in
-    match (opts, conn_listener) with
-    | None, None -> m raw_net_module "createServer" [||] |> new server
-    | Some o, None ->
-      m raw_net_module "createServer" [|obj_of_s_opt o|] |> new server
-    | None, Some cb ->
-      let g = fun raw_s -> cb (new socket raw_s) in
-      m raw_net_module "createServer" [|i !@g|] |> new server
-    | Some o, Some cb ->
-      let g = fun raw_s -> cb (new socket raw_s) in
-      m raw_net_module "createServer" [|obj_of_s_opt o; i !@g|] |> new server
+    (match (opts, conn_listener) with
+     | None, None -> m raw_net_module "createServer" [||]
+     | Some o, None ->
+       m raw_net_module "createServer" [|obj_of_s_opt o|]
+     | None, Some cb ->
+       let g = fun raw_s -> cb (new socket raw_s) in
+       m raw_net_module "createServer" [|i !@g|]
+     | Some o, Some cb ->
+       let g = fun raw_s -> cb (new socket raw_s) in
+       m raw_net_module "createServer" [|obj_of_s_opt o; i !@g|])
+    |> new server
 
 end
 
@@ -824,9 +945,6 @@ module Http = struct
 
     inherit Stream.readable raw_js
 
-    method on_close (f : (unit -> unit)) : unit =
-      m raw_js "on" [| to_js_str "close"; i !@f|]
-
     method on_finish (f : (unit -> unit)) : unit =
       m raw_js "on" [| to_js_str "finish"; i !@f|]
 
@@ -872,7 +990,7 @@ module Http = struct
 
   end
 
-  class server handler = object(self)
+  class server handler = object
 
     inherit Events.event
 
@@ -1005,7 +1123,6 @@ module Fs = struct
                      end)|]
       in
       String (m fs_module "readFileSync" ar_arg |> Js.to_string)
-
 
 end
 
@@ -1602,7 +1719,6 @@ module TLS = struct
     inherit Net.server raw_js
 
   end
-
 
 end
 
