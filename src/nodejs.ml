@@ -168,7 +168,6 @@ let signal_of_string = function
   | "SIG_INFO" -> SIG_INFO | "SIGUSR1"   -> SIG_USR1
   | "SIGUSR2"  -> SIG_USR2 | _ -> assert false
 
-
 module Error = struct
 
   class error raw_js = object
@@ -183,20 +182,20 @@ end
 
 module Buffer = struct
 
-  type buffer_init = Size of int
-                   | Array of int
-                   | String of (string * encoding)
-
   let raw_js = Js.Unsafe.variable "Buffer"
 
-  class type buf = object
-    method length : int Js.readonly_prop
-  end
+  class type raw_buf = object end
 
-  let new_buffer : (int Js.js_array Js.t -> buf Js.t) Js.constr =
+  let new_buffer_helper : (int Js.js_array Js.t -> raw_buf Js.t) Js.constr =
     Js.Unsafe.variable "Buffer"
 
-  class buffer raw_js = object(self)
+  type buffer_init_t = [`Array of int array | `Existing of Js.Unsafe.any]
+
+  class buffer (input : buffer_init_t) = object(self)
+
+    val raw_js = match input with
+      | `Array a -> new%js new_buffer_helper (Js.array a) |> i
+      | `Existing e -> i e
 
     method unsafe_raw : Js.Unsafe.any = raw_js
 
@@ -330,7 +329,7 @@ module Stream = struct
     method on_data (f : (str_or_buff -> unit)) : unit =
       let wrapped = fun raw_buffer ->
         if (Js.typeof raw_buffer |> Js.to_string) <> "string"
-        then f (Buffer (new Buffer.buffer (i raw_buffer)))
+        then f (Buffer (new Buffer.buffer (`Existing (i raw_buffer))))
         else f (String (raw_buffer |> Js.to_string))
       in
       m raw "on" [|to_js_str "data"; i !@wrapped|]
@@ -1766,8 +1765,8 @@ module String_decoder = struct
 
     method end_ : unit = m raw_js "end" [||]
 
-    method write (b : Buffer.buf Js.t) =
-      m raw_js "write" [|i b|] |> Js.to_string
+    method write (b : Buffer.buffer) =
+      m raw_js "write" [|i b#unsafe_raw|] |> Js.to_string
 
   end
 

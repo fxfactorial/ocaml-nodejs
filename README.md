@@ -79,6 +79,15 @@ let () =
   end
 ```
 
+**Typed Decoding of Buffers**
+
+```ocaml
+let () =
+  let string_decoder = new String_decoder.decoder Utf_8 in
+  let cent = new Buffer.buffer (`Array [|0xE2; 0x82; 0xAC|]) in
+  (string_decoder#write cent) |> print_endline
+```
+
 # Working Chat Server
 
 Working Chat Server
