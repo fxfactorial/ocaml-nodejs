@@ -186,18 +186,22 @@ module Buffer = struct
 
   class type raw_buf = object end
 
-  let new_buffer_helper : (int Js.js_array Js.t -> raw_buf Js.t) Js.constr =
+  let new_buffer_array : (int Js.js_array Js.t -> raw_buf Js.t) Js.constr =
     Js.Unsafe.variable "Buffer"
 
-  type buffer_init_t = [`Array of int array | `Existing of Js.Unsafe.any]
+  let new_buffer_raw : (Js.Unsafe.any -> raw_buf Js.t) Js.constr =
+    Js.Unsafe.variable "Buffer"
+
+  type buffer_init_t = [`Array of int array
+                       | `Existing of Js.Unsafe.any]
 
   class buffer (input : buffer_init_t) = object(self)
 
     val raw_js = match input with
-      | `Array a -> new%js new_buffer_helper (Js.array a) |> i
-      | `Existing e -> i e
+      | `Array a -> i (new%js new_buffer_array (Js.array a))
+      | `Existing e -> e
 
-    method unsafe_raw : Js.Unsafe.any = raw_js
+    method unsafe_raw : Js.Unsafe.any = i raw_js
 
     (** The size of the buffer in bytes. Note that this is not
         necessarily the size of the contents. length refers to the amount
