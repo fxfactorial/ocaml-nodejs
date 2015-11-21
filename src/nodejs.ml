@@ -637,6 +637,8 @@ module Net = struct
 
   class server raw_js = object
 
+    inherit Events.event
+
     method on_close (f : unit -> unit) : unit =
       m raw_js "on" [|to_js_str "close"; i !@f|]
 
@@ -1720,6 +1722,8 @@ module TLS = struct
 
   let raw_tls_module = require_module "tls"
 
+  let ciphers () = m raw_tls_module "getCiphers" [||] |> to_string_list
+
   class secure_pair raw_js = object
 
     inherit Events.event
@@ -1733,7 +1737,16 @@ module TLS = struct
 
     inherit Net.server raw_js
 
+    (* method on_client_Error  *)
+
   end
+  and socket raw_js = object
+
+    inherit Net.socket raw_js
+
+  end
+
+  (* let create_server *)
 
 end
 
