@@ -511,6 +511,8 @@ class process = object
 
   method stdout = raw_js <!> "stdout" |> new Stream.writable
 
+  method pid : int = raw_js <!> "pid"
+
 end
 
 module Crypto = struct
