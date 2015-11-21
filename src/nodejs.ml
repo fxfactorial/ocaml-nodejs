@@ -672,6 +672,8 @@ module Net = struct
     inherit Stream.duplex raw_js
     inherit Stream.readable raw_js
 
+    method fd : int = (raw_js <!> "_handle") <!> "fd"
+
     method on_connect (f : unit -> unit) : unit =
       m raw_js "on" [|to_js_str "connect"; i !@f|]
 
