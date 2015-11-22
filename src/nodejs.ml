@@ -997,17 +997,17 @@ module Http = struct
     (* method get_header *)
     (* method remove_header *)
     method write ?(callback : (unit -> unit) option) ?encoding chunk : unit =
-      match (chunk, encoding) with
-      | (String s, Some e) ->
+      match (chunk, encoding, callback) with
+      | (String s, Some e, None) ->
         m raw_js "write" [|to_js_str s; string_of_encoding e |> to_js_str|]
       | _ -> assert false
 
     (* method add_trailers *)
 
     method end_ ?data ?encoding ?(callback : (unit -> unit) option) () : unit =
-      match (data, encoding) with
-      | (Some (String s), None) -> m raw_js "end" [|to_js_str s|]
-      | (Some (String s), Some e) ->
+      match (data, encoding, callback) with
+      | (Some (String s), None, None) -> m raw_js "end" [|to_js_str s|]
+      | (Some (String s), Some e, None) ->
         m raw_js "end" [|to_js_str s; string_of_encoding e |> to_js_str|]
       | _ -> assert false
 
@@ -1048,9 +1048,9 @@ module Http = struct
       let wrapped = fun incoming -> f (new incoming_message incoming) in
       m raw_js "on" [|to_js_str "response"; i !@wrapped|]
 
-    method on_connect
-        (f : (server_response -> Net.socket -> Js.Unsafe.any)) : unit =
-      ()
+    (* method on_connect *)
+    (*     (f : (server_response -> Net.socket -> Js.Unsafe.any)) : unit = *)
+    (*   () *)
   end
 
   (* let request (f : (incoming_message -> unit)) = *)
@@ -1130,12 +1130,16 @@ module Fs = struct
                             auto_close : bool; }
 
   let create_read_stream ?opts path =
-    m fs_module "createReadStream" [|to_js_str path|]
-    |> new read_stream
+    match opts with
+    | None -> m fs_module "createReadStream" [|to_js_str path|]
+              |> new read_stream
+    | Some _ -> assert false
 
   let create_write_stream ?opts path =
-    m fs_module "createWriteStream" [|to_js_str path|]
-    |> new write_stream
+    match opts with
+    | None -> m fs_module "createWriteStream" [|to_js_str path|]
+              |> new write_stream
+    | Some _ -> assert false
 
   let read_file_sync ?opts file =
     match opts with
@@ -1715,6 +1719,98 @@ end
 
 module Udp_datagram = struct
 
+  type udp_t = Udp4 | Udp6
+
+  let raw_udp_module = require_module "dgram"
+
+  let string_of_udp = function Udp4 -> "udp4" | Udp6 -> "udp6"
+
+  class socket raw_js = object(self : 'self)
+
+    inherit Events.event
+
+    method on_close (f : unit -> unit) : unit =
+      m raw_js "on" [|to_js_str "close"; i !@f|]
+
+    method on_error (f : Error.error -> unit) : unit =
+      let g = fun e -> f (new Error.error e) in
+      m raw_js "on" [|to_js_str "error"; i !@g|]
+
+    method on_listening (f : unit -> unit) : unit =
+      m raw_js "on" [|to_js_str "listening"; i !@f|]
+
+    method on_message (f : Buffer.buffer -> Yojson.Basic.json -> unit) : unit =
+      let g = fun b j -> f (new Buffer.buffer (`Existing (i b))) (to_json j) in
+      m raw_js "on" [|to_js_str "message"; i !@g|]
+
+    (** Tells the kernel to join a multicast group with
+        IP_ADD_MEMBERSHIP socket option.
+
+        If multicastInterface is not specified, the OS will try to add
+        membership to all valid interfaces.*)
+    method add_membership ?multicast_interface multicast_addr : unit =
+      match multicast_interface with
+      | None -> m raw_js "addMembership" [|to_js_str multicast_addr|]
+      | Some inter ->
+        m raw_js "addMembership" [|to_js_str multicast_addr; to_js_str inter|]
+
+    method bind ?port ?address ?(f : (unit -> unit) option) () : unit =
+      match (port, address, f) with
+      | Some (p : int), None, None -> m raw_js "bind" [|i p|]
+      | Some (p : int), Some s, None -> m raw_js "bind" [|i p; to_js_str s|]
+      | Some (p : int), Some s, Some g -> m raw_js "bind" [|i p; to_js_str s; i !@g|]
+      (* Come back to this later *)
+      | _ -> assert false
+
+    method close ?(f : (unit -> unit) option) () : unit=
+      match f with
+      | None -> m raw_js "on" [|to_js_str "close"|]
+      | Some g -> m raw_js "on" [|to_js_str "close"; i !@g|]
+
+    method drop_membership ?multicast_interface multicast_addr : unit =
+      match multicast_interface with
+      | None -> m raw_js "dropMembership" [|to_js_str multicast_addr|]
+      | Some inter ->
+        m raw_js "dropMembership" [|to_js_str multicast_addr; to_js_str inter|]
+
+    (* method send *)
+
+    method set_broadcast (b : bool) : unit = m raw_js "setBroadcast" [|i b|]
+
+    method set_multicast_loopback (b : bool) : unit =
+      m raw_js "setMulticastLoopback" [|i b|]
+
+    (** NOTE the name difference.
+
+        Sets the IP_MULTICAST_TTL socket option. TTL stands for "Time to
+        Live," but in this context it specifies the number of IP hops that a
+        packet is allowed to go through, specifically for multicast
+        traffic. Each router or gateway that forwards a packet decrements the
+        TTL. If the TTL is decremented to 0 by a router, it will not be
+        forwarded.
+
+        The argument to setMulticastTTL() is a number of hops between
+        0 and 255. The default on most systems is 1. *)
+    method set_multicast_max_hops (j : int) : unit =
+      assert (j >= 0 && j <= 255);
+      m raw_js "setMulticastTTL" [|i j|]
+
+    method set_max_hops (j : int) : unit =
+      assert (j >= 1 && j <= 255);
+      m raw_js "setTTL" [|i j|]
+
+    method ref_ () : 'self = m raw_js "ref" [||]
+
+    method unref_ () : 'self = m raw_js "unref" [||]
+
+  end
+
+  let create_socket ?f udp_t =
+    let s =
+      (m raw_udp_module "createSocket" [|string_of_udp udp_t |> to_js_str|])
+      |> new socket
+    in
+    match f with None -> s | Some g -> s#on_message g; s
 
 end
 
