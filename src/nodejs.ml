@@ -168,6 +168,9 @@ let signal_of_string = function
   | "SIG_INFO" -> SIG_INFO | "SIGUSR1"   -> SIG_USR1
   | "SIGUSR2"  -> SIG_USR2 | _ -> assert false
 
+let set_interval ~f:(f : unit -> unit) (delay : int) : unit =
+  Js.Unsafe.fun_call (Js.Unsafe.variable "setInterval") [|i !@f; i delay|]
+
 module Error = struct
 
   class error raw_js = object
@@ -189,16 +192,18 @@ module Buffer = struct
   let new_buffer_array : (int Js.js_array Js.t -> raw_buf Js.t) Js.constr =
     Js.Unsafe.variable "Buffer"
 
-  let new_buffer_raw : (Js.Unsafe.any -> raw_buf Js.t) Js.constr =
+  let new_buffer_string : (Js.js_string Js.t -> raw_buf Js.t) Js.constr =
     Js.Unsafe.variable "Buffer"
 
   type buffer_init_t = [`Array of int array
+                       | `String of string
                        | `Existing of Js.Unsafe.any]
 
   class buffer (input : buffer_init_t) = object(self)
 
     val raw_js = match input with
       | `Array a -> i (new%js new_buffer_array (Js.array a))
+      | `String s -> i (new%js new_buffer_string (Js.string s))
       | `Existing e -> e
 
     method unsafe_raw : Js.Unsafe.any = i raw_js
@@ -1725,7 +1730,9 @@ module Udp_datagram = struct
 
   let string_of_udp = function Udp4 -> "udp4" | Udp6 -> "udp6"
 
-  class socket raw_js = object(self : 'self)
+  let udp_of_string = function "udp4" -> Udp4 | "udp6" -> Udp6 | _ -> assert false
+
+  class socket raw_js = object(_ : 'self)
 
     inherit Events.event
 
@@ -1759,8 +1766,11 @@ module Udp_datagram = struct
       | Some (p : int), None, None -> m raw_js "bind" [|i p|]
       | Some (p : int), Some s, None -> m raw_js "bind" [|i p; to_js_str s|]
       | Some (p : int), Some s, Some g -> m raw_js "bind" [|i p; to_js_str s; i !@g|]
-      (* Come back to this later *)
-      | _ -> assert false
+      | None, Some s, None -> m raw_js "bind" [|to_js_str s|]
+      | None, Some s, Some g -> m raw_js "bind" [|to_js_str s; i !@g|]
+      | None, None, Some g-> m raw_js "bind" [|i !@g|]
+      | None, None, None -> m raw_js "bind" [||]
+      | Some (p : int), None, Some g -> m raw_js "bind" [|i p; i !@g|]
 
     method close ?(f : (unit -> unit) option) () : unit=
       match f with
@@ -1773,7 +1783,27 @@ module Udp_datagram = struct
       | Some inter ->
         m raw_js "dropMembership" [|to_js_str multicast_addr; to_js_str inter|]
 
-    (* method send *)
+    (* Refine this later *)
+    method send
+        ?(on_complete: (unit -> unit) option)
+        ~offset:(offset : int)
+        ~length:(length : int)
+        ~port:(port : int)
+        ~dest_address
+        s_or_b : unit =
+      match s_or_b, on_complete with
+      | String s, None ->
+        [|to_js_str s; i offset; i length; i port; to_js_str dest_address|]
+        |> m raw_js "send"
+      | Buffer b, None ->
+        [|i b#unsafe_raw; i offset; i length; i port; to_js_str dest_address|]
+        |> m raw_js "send"
+      | Buffer b, Some g ->
+        [|i b#unsafe_raw; i offset; i length; i port; to_js_str dest_address; i !@g|]
+        |> m raw_js "send"
+      | String s, Some g ->
+        [|to_js_str s; i offset; i length; i port; to_js_str dest_address; i !@g|]
+        |> m raw_js "send"
 
     method set_broadcast (b : bool) : unit = m raw_js "setBroadcast" [|i b|]
 
@@ -1816,9 +1846,7 @@ end
 
 module Readline = struct
 
-  class interface raw_js = object
-
-  end
+  (* class interface raw_js = object end *)
 
 end
 
