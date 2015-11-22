@@ -88,6 +88,47 @@ let () =
   (string_decoder#write cent) |> print_endline
 #+END_SRC
 
+*Multicast DNS, use this to build up a P2P chat application*
+#+BEGIN_SRC ocaml -n
+(* This is the server *)
+open Nodejs
+
+let broadcast_message = "Hello!, anyone listening!?"
+
+let () =
+  let server = Udp_datagram.(create_socket Udp4) in
+  server#bind ~f:begin fun () ->
+    server#set_broadcast true;
+    server#set_multicast_max_hops 128;
+    set_interval ~f:begin fun () ->
+      server#send
+        ~offset:0
+        ~length:(String.length broadcast_message)
+        ~port:5007
+        ~dest_address:"224.1.1.1"
+        (String broadcast_message)
+    end 540
+  end
+    ()
+#+END_SRC
+
+and the client...
+#+BEGIN_SRC ocaml -n
+open Nodejs
+
+let () =
+  let client = Udp_datagram.(create_socket Udp4) in
+  client#on_listening begin fun () ->
+    client#set_broadcast true;
+    client#set_multicast_max_hops 128;
+    client#add_membership "224.1.1.1"
+  end;
+  client#on_message begin fun message remote ->
+    print_endline (message#to_string ())
+  end;
+  client#bind ~port:5007 ()
+#+END_SRC
+
 * Working Chat Server
 
 Working Chat Server
