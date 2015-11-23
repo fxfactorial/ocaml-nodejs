@@ -1730,7 +1730,8 @@ module Udp_datagram = struct
 
   let string_of_udp = function Udp4 -> "udp4" | Udp6 -> "udp6"
 
-  let udp_of_string = function "udp4" -> Udp4 | "udp6" -> Udp6 | _ -> assert false
+  let udp_of_string =
+    function "udp4" -> Udp4 | "udp6" -> Udp6 | _ -> assert false
 
   class socket raw_js = object(_ : 'self)
 
@@ -1765,7 +1766,8 @@ module Udp_datagram = struct
       match (port, address, f) with
       | Some (p : int), None, None -> m raw_js "bind" [|i p|]
       | Some (p : int), Some s, None -> m raw_js "bind" [|i p; to_js_str s|]
-      | Some (p : int), Some s, Some g -> m raw_js "bind" [|i p; to_js_str s; i !@g|]
+      | Some (p : int), Some s, Some g ->
+        m raw_js "bind" [|i p; to_js_str s; i !@g|]
       | None, Some s, None -> m raw_js "bind" [|to_js_str s|]
       | None, Some s, Some g -> m raw_js "bind" [|to_js_str s; i !@g|]
       | None, None, Some g-> m raw_js "bind" [|i !@g|]
@@ -1781,7 +1783,8 @@ module Udp_datagram = struct
       match multicast_interface with
       | None -> m raw_js "dropMembership" [|to_js_str multicast_addr|]
       | Some inter ->
-        m raw_js "dropMembership" [|to_js_str multicast_addr; to_js_str inter|]
+        [|to_js_str multicast_addr; to_js_str inter|]
+        |> m raw_js "dropMembership"
 
     (* Refine this later *)
     method send
@@ -1799,10 +1802,12 @@ module Udp_datagram = struct
         [|i b#unsafe_raw; i offset; i length; i port; to_js_str dest_address|]
         |> m raw_js "send"
       | Buffer b, Some g ->
-        [|i b#unsafe_raw; i offset; i length; i port; to_js_str dest_address; i !@g|]
+        [|i b#unsafe_raw; i offset; i length;
+          i port; to_js_str dest_address; i !@g|]
         |> m raw_js "send"
       | String s, Some g ->
-        [|to_js_str s; i offset; i length; i port; to_js_str dest_address; i !@g|]
+        [|to_js_str s; i offset; i length;
+          i port; to_js_str dest_address; i !@g|]
         |> m raw_js "send"
 
     method set_broadcast (b : bool) : unit = m raw_js "setBroadcast" [|i b|]
@@ -1835,12 +1840,15 @@ module Udp_datagram = struct
 
   end
 
-  let create_socket ?f udp_t =
-    let s =
-      (m raw_udp_module "createSocket" [|string_of_udp udp_t |> to_js_str|])
+  let create_socket ?(reuse_address=false) ?f udp_t =
+    let options = object%js val reuseAddr = reuse_address end in
+    Js.Unsafe.set options "type" (string_of_udp udp_t |> to_js_str);
+    match f with
+    | None -> m raw_udp_module "createSocket" [|!!options|]
       |> new socket
-    in
-    match f with None -> s | Some g -> s#on_message g; s
+    | Some g ->
+      m raw_udp_module "createSocket" |> new socket |> fun s -> s#on_message g;
+      s
 
 end
 
