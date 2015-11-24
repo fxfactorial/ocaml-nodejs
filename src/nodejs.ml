@@ -508,7 +508,9 @@ class process = object
   (* method hrtime : (int * int) = *)
   (* method send  *)
 
-  method disconnect : unit = m raw_js "disconnect" [||]
+  (* This is incorrect, got this error TypeError: a[(d +
+     1)].disconnect is not a function *)
+  (* method disconnect : unit = m raw_js "disconnect" [||] *)
 
   method stderr = raw_js <!> "stderr" |> new Stream.writable
 
@@ -1726,6 +1728,10 @@ module Udp_datagram = struct
 
   type udp_t = Udp4 | Udp6
 
+  type address = { address : string;
+                   family : ip_family;
+                   port : int; }
+
   let raw_udp_module = require_module "dgram"
 
   let string_of_udp = function Udp4 -> "udp4" | Udp6 -> "udp6"
@@ -1762,6 +1768,12 @@ module Udp_datagram = struct
       | Some inter ->
         m raw_js "addMembership" [|to_js_str multicast_addr; to_js_str inter|]
 
+    method address =
+      let h = m raw_js "address" [||] in
+      { address = h <!> "address" |> Js.to_string;
+        family = h <!> "family" |> Js.to_string |> ip_of_string;
+        port = (h <!> "port" : int); }
+
     method bind ?port ?address ?(f : (unit -> unit) option) () : unit =
       match (port, address, f) with
       | Some (p : int), None, None -> m raw_js "bind" [|i p|]
@@ -1788,6 +1800,7 @@ module Udp_datagram = struct
 
     (* Refine this later *)
     method send
+        (* This on_complete signature is incorrect *)
         ?(on_complete: (unit -> unit) option)
         ~offset:(offset : int)
         ~length:(length : int)

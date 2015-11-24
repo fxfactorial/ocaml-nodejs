@@ -88,47 +88,68 @@ let () =
   (string_decoder#write cent) |> print_endline
 ```
 
-**Multicast DNS, use this to build up a P2P chat application**
-
-```ocaml
- 1  (* This is the server *)
- 2  open Nodejs
- 3  
- 4  let broadcast_message = "Hello!, anyone listening!?"
- 5  
- 6  let () =
- 7    let server = Udp_datagram.(create_socket Udp4) in
- 8    server#bind ~f:begin fun () ->
- 9      server#set_broadcast true;
-10      server#set_multicast_max_hops 128;
-11      set_interval ~f:begin fun () ->
-12        server#send
-13          ~offset:0
-14          ~length:(String.length broadcast_message)
-15          ~port:5007
-16          ~dest_address:"224.1.1.1"
-17          (String broadcast_message)
-18      end 540
-19    end
-20      ()
-```
-
-and the client&#x2026;
+**Multicast DNS over UDP sockets, only for the local network, like a
+ no config p2p chat application.**
 
 ```ocaml
  1  open Nodejs
  2  
- 3  let () =
- 4    let client = Udp_datagram.(create_socket Udp4) in
- 5    client#on_listening begin fun () ->
- 6      client#set_broadcast true;
- 7      client#set_multicast_max_hops 128;
- 8      client#add_membership "224.1.1.1"
- 9    end;
-10    client#on_message begin fun message remote ->
-11      print_endline (message#to_string ())
-12    end;
-13    client#bind ~port:5007 ()
+ 3  module U = Yojson.Basic.Util
+ 4  
+ 5  let (multicast_addr, bind_addr, port) = "224.1.1.1", "0.0.0.0", 6811
+ 6  
+ 7  let () =
+ 8    Random.self_init ();
+ 9    let p = new process in
+10    let user_name = ref (Printf.sprintf "User:%d" (Random.int 10000)) in
+11    let listener = Udp_datagram.(create_socket ~reuse_address:true Udp4) in
+12    let sender = Udp_datagram.(create_socket ~reuse_address:true Udp4) in
+13  
+14    listener#bind ~port ~address:multicast_addr ~f:begin fun () ->
+15      listener#add_membership multicast_addr;
+16      listener#set_broadcast true;
+17      listener#set_multicast_loopback true
+18    end ();
+19  
+20  
+21    listener#on_message begin fun b resp ->
+22  
+23      let handle = b#to_string () |> json_of_string in
+24      if (handle <!> "id" |> Js.to_string) <> !user_name
+25      then print_string (handle <!> "message" |> Js.to_string)
+26  
+27    end;
+28  
+29    p#stdin#on_data begin function
+30      | String _ -> ()
+31      | Buffer b ->
+32        let msg = b#to_string () in
+33        (* This needs to be redone with Re_pcre *)
+34        if String.length msg > 10 then begin
+35          let modify = String.sub msg 0 9 in
+36          if modify = "set name:"
+37          then begin
+38            let as_string = Js.string (String.trim msg) in
+39            let chopped =
+40              as_string##split (Js.string ":") |> to_string_list |> Array.of_list
+41            in
+42            user_name := chopped.(1)
+43          end
+44        end;
+45  
+46        let msg = Printf.sprintf "%s>>>%s" !user_name (b#to_string ()) in
+47        let total_message = (object%js
+48          val id = !user_name |> to_js_str
+49          val message = msg |> to_js_str
+50          end) |> stringify
+51        in
+52        sender#send
+53          ~offset:0
+54          ~length:(String.length total_message)
+55          ~port
+56          ~dest_address:multicast_addr
+57          (String total_message)
+58      end
 ```
 
 # Working Chat Server

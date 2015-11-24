@@ -88,45 +88,67 @@ let () =
   (string_decoder#write cent) |> print_endline
 #+END_SRC
 
-*Multicast DNS, use this to build up a P2P chat application*
+*Multicast DNS over UDP sockets, only for the local network, like a
+ no config p2p chat application.*
 #+BEGIN_SRC ocaml -n
-(* This is the server *)
 open Nodejs
 
-let broadcast_message = "Hello!, anyone listening!?"
+module U = Yojson.Basic.Util
+
+let (multicast_addr, bind_addr, port) = "224.1.1.1", "0.0.0.0", 6811
 
 let () =
-  let server = Udp_datagram.(create_socket Udp4) in
-  server#bind ~f:begin fun () ->
-    server#set_broadcast true;
-    server#set_multicast_max_hops 128;
-    set_interval ~f:begin fun () ->
-      server#send
+  Random.self_init ();
+  let p = new process in
+  let user_name = ref (Printf.sprintf "User:%d" (Random.int 10000)) in
+  let listener = Udp_datagram.(create_socket ~reuse_address:true Udp4) in
+  let sender = Udp_datagram.(create_socket ~reuse_address:true Udp4) in
+
+  listener#bind ~port ~address:multicast_addr ~f:begin fun () ->
+    listener#add_membership multicast_addr;
+    listener#set_broadcast true;
+    listener#set_multicast_loopback true
+  end ();
+
+
+  listener#on_message begin fun b resp ->
+
+    let handle = b#to_string () |> json_of_string in
+    if (handle <!> "id" |> Js.to_string) <> !user_name
+    then print_string (handle <!> "message" |> Js.to_string)
+
+  end;
+
+  p#stdin#on_data begin function
+    | String _ -> ()
+    | Buffer b ->
+      let msg = b#to_string () in
+      (* This needs to be redone with Re_pcre *)
+      if String.length msg > 10 then begin
+        let modify = String.sub msg 0 9 in
+        if modify = "set name:"
+        then begin
+          let as_string = Js.string (String.trim msg) in
+          let chopped =
+            as_string##split (Js.string ":") |> to_string_list |> Array.of_list
+          in
+          user_name := chopped.(1)
+        end
+      end;
+
+      let msg = Printf.sprintf "%s>>>%s" !user_name (b#to_string ()) in
+      let total_message = (object%js
+        val id = !user_name |> to_js_str
+        val message = msg |> to_js_str
+        end) |> stringify
+      in
+      sender#send
         ~offset:0
-        ~length:(String.length broadcast_message)
-        ~port:5007
-        ~dest_address:"224.1.1.1"
-        (String broadcast_message)
-    end 540
-  end
-    ()
-#+END_SRC
-
-and the client...
-#+BEGIN_SRC ocaml -n
-open Nodejs
-
-let () =
-  let client = Udp_datagram.(create_socket Udp4) in
-  client#on_listening begin fun () ->
-    client#set_broadcast true;
-    client#set_multicast_max_hops 128;
-    client#add_membership "224.1.1.1"
-  end;
-  client#on_message begin fun message remote ->
-    print_endline (message#to_string ())
-  end;
-  client#bind ~port:5007 ()
+        ~length:(String.length total_message)
+        ~port
+        ~dest_address:multicast_addr
+        (String total_message)
+    end
 #+END_SRC
 
 * Working Chat Server
