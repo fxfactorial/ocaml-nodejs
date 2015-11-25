@@ -548,6 +548,10 @@ module Crypto = struct
 
     method get_curves = m raw_js "getCurves" [||] |> to_string_list
 
+    method random_bytes (j: int) =
+      let rand = m raw_js "randomBytes" [|i j|] in
+      new Buffer.buffer (`Existing rand)
+
   end
 
 
