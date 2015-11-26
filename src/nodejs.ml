@@ -398,6 +398,12 @@ module Stream = struct
     method set_default_encoding e : unit =
       m raw_js "setDefaultEncoding" [|string_of_encoding e |> to_js_str|]
 
+    (* Not fully implemented*)
+    method write chunk =
+      (match chunk with
+      | String str -> m raw_js "write" [|to_js_str str|]
+      | Buffer bf -> m raw_js "write" [|i bf#unsafe_raw|])
+      |> Js.to_bool
   end
 
 end
