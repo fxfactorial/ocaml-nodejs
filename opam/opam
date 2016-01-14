@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "nodejs"
-version: "0.8"
+version: "0.9"
 maintainer: "Edgar Aroutiounian <edgar.factorial@gmail.com>"
 authors: [ "Edgar Aroutiounian <edgar.factorial@gmail.com>" ]
 license: "BSD-3-clause"
@@ -42,19 +42,20 @@ post-messages: [
   "Now you can write OCaml and execute on node."
   "Example assuming file name of c.ml:"
   "
-open Nodejs 
+open Nodejs
 
-let () = 
+let () =
 
   let server =
-  Http.create_server begin fun incoming response ->
-
-    Fs.read_file ~path:\"./client.html\" begin fun err data ->
-      response#write_head ~status_code:200 [(\"Content-type\", \"text/html\")];
-      response#end_ ~data:(String data) ()
-
-      end
-   end
+    (* Throw away the incoming_message *)
+    Http.create_server begin fun _ response ->
+      (* Read the file sync *)
+      (match Fs.read_file_sync \"./client.html\" with
+       | String data ->
+         response#write_head ~status_code:200 [(\"Content-type\", \"text/html\")];
+         response#end_ ~data:(String data) ()
+       | Buffer _ -> ())
+    end
   in
   ignore begin
     server#listen ~port:8080 begin fun () ->
@@ -62,7 +63,8 @@ let () =
       Printf.sprintf \"Started Server and Running node: %s\" (new process#version)
       |> print_endline
     end
-  end"
+  end
+  "
   "ocamlfind ocamlc c.ml -linkpkg -package nodejs -o T.out"
   "js_of_ocaml T.out"
   "node T.js"
