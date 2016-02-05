@@ -5,10 +5,9 @@ maintainer: "Edgar Aroutiounian <edgar.factorial@gmail.com>"
 authors: [ "Edgar Aroutiounian <edgar.factorial@gmail.com>" ]
 license: "BSD-3-clause"
 homepage: "https://github.com/fxfactorial/ocaml-nodejs"
-bug-reports: "https://github.com/fxfactorial/ocaml-nodejs/issues"
 dev-repo: "https://github.com/fxfactorial/ocaml-nodejs.git"
+bug-reports: "https://github.com/fxfactorial/ocaml-nodejs/issues"
 build: [
-  ["oasis" "setup"]
   ["ocaml" "setup.ml" "-configure" "--prefix" prefix]
   ["ocaml" "setup.ml" "-build"]
 ]
@@ -17,24 +16,22 @@ remove: [
   ["ocamlfind" "remove" "nodejs"]
 ]
 build-test: [
-  ["oasis" "setup"]
   ["ocaml" "setup.ml" "-configure" "--enable-tests"]
   ["ocaml" "setup.ml" "-build"]
   ["ocaml" "setup.ml" "-test"]
 ]
 depends: [
-  "js_of_ocaml" {>= "2.6"}
-  "oasis" {build & >= "0.4"}
+  "js_of_ocaml" {>= "2.7"}
+  "lwt" {>= "2.5.1"}
+  "magic-mime"
   "ocamlfind" {build}
   "yojson"
-  "magic-mime"
 ]
-
-available: [ ocaml-version >= "4.02.3" ]
+available: [ ocaml-version >= "4.02.0" ]
 
 depexts: [
   [["debian"] ["nodejs"]]
-  [["homebrew" "osx"] ["nodejs"]]
+  [["homebrew" "osx"] ["node"]]
   [["ubuntu"] ["nodejs"]]
 ]
 
