@@ -1161,7 +1161,7 @@ module Fs = struct
   let read_file_sync ?opts file =
     match opts with
     | None ->
-      Buffer (new Buffer.buffer (m fs_module "readFileSync" [|to_js_str file|]))
+      Buffer (new Buffer.buffer (`String (m fs_module "readFileSync" [|to_js_str file|])))
     | Some { encoding = e; flag; } ->
       let ar_arg = [|to_js_str file; i (object%js
                        val encoding = string_of_encoding e |> Js.string
