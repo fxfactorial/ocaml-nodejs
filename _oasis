@@ -28,6 +28,20 @@ Library nodejs
     yojson,
     magic-mime
 
+Library nodejs_lwt
+  Path:         lwt
+  Modules:
+   Nodejs_Js,
+   Nodejs_Main
+  CompiledObject: byte
+  BuildDepends:
+    js_of_ocaml (>= 2.7),
+    js_of_ocaml.ppx,
+    lwt.ppx,
+    lwt (>= 2.5.1),
+    yojson,
+    magic-mime
+
 SourceRepository master
   Type:     git
   Location: https://github.com/fxfactorial/ocaml-nodejs.git
