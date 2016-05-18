@@ -1,0 +1,10 @@
+# OASIS_START
+# DO NOT EDIT (digest: 484b02b01e31450b02cfea32a6e76506)
+version = "0.9"
+description = "js_of_ocaml bindings for nodejs"
+requires = "js_of_ocaml js_of_ocaml.ppx"
+archive(byte) = "pervasives_js.cma"
+archive(byte, plugin) = "pervasives_js.cma"
+exists_if = "pervasives_js.cma"
+# OASIS_STOP
+

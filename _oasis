@@ -28,10 +28,17 @@ Library nodejs
     yojson,
     magic-mime
 
+Library pervasives_js
+  Path:         pervasives
+  Modules:      Pervasives_Js
+  CompiledObject: byte
+  BuildDepends:
+    js_of_ocaml (>= 2.7),
+    js_of_ocaml.ppx
+
 Library nodejs_lwt
   Path:         lwt
   Modules:
-   Nodejs_Js,
    Nodejs_Main
   FindlibName: lwt
   FindlibParent: nodejs
@@ -42,6 +49,7 @@ Library nodejs_lwt
     lwt.ppx,
     lwt (>= 2.5.1),
     nodejs,
+    pervasives_js,
     yojson,
     magic-mime
 

@@ -1,5 +1,5 @@
 open Js
-open Nodejs_Js
+open Pervasives_Js
 
 let _events =
   require_module "events"
