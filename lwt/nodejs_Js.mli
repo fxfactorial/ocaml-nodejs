@@ -20,7 +20,7 @@ val require_module : string -> 'a
 val unsafe_string : string -> Js.Unsafe.any
 (** Convert an OCaml string to a JavaScript value. *)
 
-val unsafe_callback : 'a -> 'b -> Js.Unsafe.any
+val unsafe_callback : ('a -> 'b) -> Js.Unsafe.any
 (** Convert an OCaml function to a JavaScript value. *)
 
 val array_to_js : ('a -> 'b) -> 'a array -> 'b Js.js_array Js.t
