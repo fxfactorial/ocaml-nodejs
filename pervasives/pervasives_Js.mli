@@ -39,6 +39,10 @@ val list_of_js : ('a -> 'b) -> 'a Js.js_array Js.t -> 'b list
 (** [array_of_js conv a] convert the JavaScript array [a] to an OCaml
     list, using the provided function [conv] to convert array items. *)
 
+val maybe_convert : 'a -> string * ('b -> 'c) -> 'c option
+(** [maybe_convert obj (fieldname, convert)] return [Some(convert x)]
+    if [x] is the value of the field [fieldname] in [obj] or [None] if the
+    field is not defined. *)
 
 (** {6 Javascript Introspection} *)
 

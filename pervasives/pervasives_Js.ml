@@ -43,6 +43,12 @@ let list_of_js convert a =
 let list_to_js convert b =
   array_to_js convert (Array.of_list b)
 
+let maybe_convert obj (field, convert) =
+  Optdef.case (Unsafe.get obj field)
+    (fun () -> None)
+    (fun x -> Some(convert x))
+
+
 let stringify : 'a -> string =
   fun s -> (to_string(Json.output s))
 
