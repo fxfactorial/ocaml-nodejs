@@ -33,12 +33,15 @@ Library nodejs_lwt
   Modules:
    Nodejs_Js,
    Nodejs_Main
+  FindlibName: lwt
+  FindlibParent: nodejs
   CompiledObject: byte
   BuildDepends:
     js_of_ocaml (>= 2.7),
     js_of_ocaml.ppx,
     lwt.ppx,
     lwt (>= 2.5.1),
+    nodejs,
     yojson,
     magic-mime
 

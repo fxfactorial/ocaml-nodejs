@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 30bac2c5e7c45703639aad53d81351e5)
+# DO NOT EDIT (digest: 3fa860c29b0ff52052a7e41b9d017786)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -30,5 +30,6 @@ true: annot, bin_annot
 <lwt/*.ml{,i,y}>: pkg_lwt.ppx
 <lwt/*.ml{,i,y}>: pkg_magic-mime
 <lwt/*.ml{,i,y}>: pkg_yojson
+<lwt/*.ml{,i,y}>: use_nodejs
 # OASIS_STOP
 "examples/node_modules": not_hygienic
