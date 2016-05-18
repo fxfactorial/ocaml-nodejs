@@ -39,6 +39,7 @@ Library pervasives_js
 Library nodejs_lwt
   Path:         lwt
   Modules:
+   Nodejs_Events,
    Nodejs_Main
   FindlibName: lwt
   FindlibParent: nodejs
