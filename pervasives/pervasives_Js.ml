@@ -22,6 +22,14 @@ let unsafe_string s =
 let unsafe_callback f =
   Unsafe.inject (Unsafe.callback f)
 
+let unsafe_obj_filter lst =
+  let rec loop ax = function
+    | [] -> List.rev ax
+    | Some(member) :: tl -> loop (member :: ax) tl
+    | None :: tl -> loop ax tl
+  in
+  Unsafe.obj(Array.of_list (loop [] lst))
+
 let array_to_js : ('a -> 'b) -> 'a array -> 'b js_array t =
   fun convert b ->
     let a = new%js array_empty in
@@ -48,6 +56,9 @@ let maybe_convert obj (field, convert) =
     (fun () -> None)
     (fun x -> Some(convert x))
 
+let maybe_member f name = function
+  | Some(value) -> Some(name, f value)
+  | None -> None
 
 let stringify : 'a -> string =
   fun s -> (to_string(Json.output s))

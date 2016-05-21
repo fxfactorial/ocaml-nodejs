@@ -23,6 +23,9 @@ val unsafe_string : string -> Js.Unsafe.any
 val unsafe_callback : ('a -> 'b) -> Js.Unsafe.any
 (** Convert an OCaml function to a JavaScript value. *)
 
+val unsafe_obj_filter : (string * Js.Unsafe.any) option list -> 'a
+(** Prepare a JavaScript object out of its member specification. *)
+
 val array_to_js : ('a -> 'b) -> 'a array -> 'b Js.js_array Js.t
 (** [array_to_js conv a] convert the OCaml array [a] to a JavaScript
     array, using the provided function [conv] to convert array items. *)
@@ -43,6 +46,12 @@ val maybe_convert : 'a -> string * ('b -> 'c) -> 'c option
 (** [maybe_convert obj (fieldname, convert)] return [Some(convert x)]
     if [x] is the value of the field [fieldname] in [obj] or [None] if the
     field is not defined. *)
+
+val maybe_member : ('a -> 'b) -> string -> 'a option -> (string * 'b) option
+(** [maybe_member f name opt] translate [opt] to [Some(name, f value)]
+    if it contains a [value] or to [None] otherwise.
+
+    This is intended to be used in conjunction with [unsafe_obj_filter]. *)
 
 (** {6 Javascript Introspection} *)
 
