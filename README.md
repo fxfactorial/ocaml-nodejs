@@ -13,15 +13,19 @@ $ opam install nodejs
 **Create a file stream, gzip it, write it**
 
 ```ocaml
-1  let _ =
-2    Fs.create_read_stream "code.ml" >|>
-3    Zlib.create_gzip () >|>
-4    Fs.create_write_stream "NEWCODE_TEST.ml"
+open Nodejs
+
+let _ =
+  Fs.create_read_stream "code.ml" >|>
+  Zlib.create_gzip () >|>
+  Fs.create_write_stream "NEWCODE_TEST.ml"
 ```
 
 **Do an HTTP get request**
 
 ```ocaml
+let api_source = "https://github.com"
+
 let () =
   try
     ignore begin
