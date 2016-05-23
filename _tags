@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 517e66e81979bf5aedd1bb4da363b5df)
+# DO NOT EDIT (digest: 8dd5fb89ed129fe6405d71fc4c84ff18)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -22,5 +22,19 @@ true: annot, bin_annot
 <src/*.ml{,i,y}>: pkg_lwt.ppx
 <src/*.ml{,i,y}>: pkg_magic-mime
 <src/*.ml{,i,y}>: pkg_yojson
+# Library pervasives_js
+"pervasives/pervasives_js.cmxs": use_pervasives_js
+<pervasives/*.ml{,i,y}>: pkg_js_of_ocaml
+<pervasives/*.ml{,i,y}>: pkg_js_of_ocaml.ppx
+# Library nodejs_lwt
+"lwt/nodejs_lwt.cmxs": use_nodejs_lwt
+<lwt/*.ml{,i,y}>: pkg_js_of_ocaml
+<lwt/*.ml{,i,y}>: pkg_js_of_ocaml.ppx
+<lwt/*.ml{,i,y}>: pkg_lwt
+<lwt/*.ml{,i,y}>: pkg_lwt.ppx
+<lwt/*.ml{,i,y}>: pkg_magic-mime
+<lwt/*.ml{,i,y}>: pkg_yojson
+<lwt/*.ml{,i,y}>: use_nodejs
+<lwt/*.ml{,i,y}>: use_pervasives_js
 # OASIS_STOP
 "examples/node_modules": not_hygienic

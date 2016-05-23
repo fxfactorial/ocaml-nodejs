@@ -1,5 +1,9 @@
 S src
+S pervasives
+S lwt
 B _build/src
+B _build/pervasives
+B _build/lwt
 PKG js_of_ocaml js_of_ocaml.ppx nodejs socket_io express yojson colors_js
 PKG magic-mime
 FLG -w +a-4-40..42-44-45-48

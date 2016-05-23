@@ -1,0 +1,10 @@
+# OASIS_START
+# DO NOT EDIT (digest: 2a74ac063c18f9c6eb51a9423281be8a)
+version = "0.9"
+description = "js_of_ocaml bindings for nodejs"
+requires = "js_of_ocaml js_of_ocaml.ppx lwt.ppx lwt yojson magic-mime"
+archive(byte) = "nodejs_lwt.cma"
+archive(byte, plugin) = "nodejs_lwt.cma"
+exists_if = "nodejs_lwt.cma"
+# OASIS_STOP
+
