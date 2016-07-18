@@ -123,6 +123,62 @@ module Net = struct
 
   (* let create_server listener = *)
   (*   Nodejs.Net.net##createServer_withConnListener (Js.wrap_callback listener) *)
+end
 
+module Os = struct
+
+  (* Later hide with mli *)
+  let os_handle = Nodejs.Os.os
+
+  type cpu_stat = { model: string;
+                    speed: int;
+                    times: <user:int;
+                            nice: int;
+                            sys: int;
+                            idle: int;
+                            irq: int;> }
+
+  type endianess = Big | Little
+
+  type platform = Aix | Darwin | Freebsd | Linux | Openbsd | Sunos | Win32 | Android
+
+  (* Hide as well in mli *)
+  let endianess_of_string =
+    function "BE" -> Big | "LE" -> Little | _ -> assert false
+
+  let platform_of_string = function
+    | "aix" -> Aix
+    | "darwin" -> Darwin
+    | "freebsd" -> Freebsd
+    | "linux" -> Linux
+      (* TODO FINISH*)
+    | _ -> assert false
+
+  let cpu_stats () =
+    os_handle##cpus
+    |> Js.to_array
+    |> Array.map (fun c ->
+        {model = c##.model |> Js.to_string;
+         speed = c##.speed;
+         times = object
+           method user = c##.times##.user
+           method nice = c##.times##.nice
+           method sys = c##.times##.sys
+           method idle = c##.times##.idle
+           method irq = c##.times##.irq
+         end}
+      )
+    |> Array.to_list
+
+  let endianess () =
+    os_handle##endianness |> Js.to_string |> endianess_of_string
+
+  let free_memory_available () = os_handle##freemem
+
+  let home_directory () = os_handle##homedir |> Js.to_string
+
+  let hostname () = os_handle##hostname |> Js.to_string
+
+  let load_average () = os_handle##loadavg |> Js.to_array
 
 end

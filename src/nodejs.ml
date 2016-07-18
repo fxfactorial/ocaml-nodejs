@@ -306,3 +306,29 @@ module Fs = struct
 
 end
 
+module Os = struct
+
+  class type os = object
+    method _EOL : Js.js_string Js.t Js.readonly_prop
+    method arch : Js.js_string Js.t Js.meth
+    (* method constants *)
+    method cpus :
+      <model : Js.js_string Js.t Js.readonly_prop;
+       speed : int Js.readonly_prop;
+       times : <user: int Js.readonly_prop;
+                nice : int Js.readonly_prop;
+                sys: int Js.readonly_prop;
+                idle : int Js.readonly_prop;
+                irq : int Js.readonly_prop> Js.t Js.readonly_prop>
+        Js.t Js.js_array Js.t Js.meth
+    method endianness : Js.js_string Js.t Js.meth
+    method freemem : int Js.meth
+    method homedir : Js.js_string Js.t Js.meth
+    method hostname : Js.js_string Js.t Js.meth
+    method loadavg : int Js.js_array Js.t Js.meth
+
+  end
+
+  let os : os Js.t = Bindings_utils.require_module "os"
+
+end
