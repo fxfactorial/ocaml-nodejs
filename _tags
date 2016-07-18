@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: dabbdc31898e7bff12e02fb86238cca5)
+# DO NOT EDIT (digest: 489249b49b97e38712418115aed3c29e)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -24,10 +24,22 @@ true: annot, bin_annot
 <src/*.ml{,i,y}>: pkg_lwt.ppx
 # Library high_level
 "src/higher_level/high_level.cmxs": use_high_level
+"src/higher_level/high_level.cma": oasis_library_high_level_byte
+<src/higher_level/*.ml{,i,y}>: oasis_library_high_level_byte
 <src/higher_level/*.ml{,i,y}>: pkg_js_of_ocaml
 <src/higher_level/*.ml{,i,y}>: pkg_js_of_ocaml.ppx
 <src/higher_level/*.ml{,i,y}>: pkg_lwt
 <src/higher_level/*.ml{,i,y}>: pkg_lwt.ppx
 <src/higher_level/*.ml{,i,y}>: use_nodejs
+# Library high_level_lwt
+"src/higher_level_lwt/high_level_lwt.cmxs": use_high_level_lwt
+"src/higher_level_lwt/high_level_lwt.cma": oasis_library_high_level_lwt_byte
+<src/higher_level_lwt/*.ml{,i,y}>: oasis_library_high_level_lwt_byte
+<src/higher_level_lwt/*.ml{,i,y}>: pkg_js_of_ocaml
+<src/higher_level_lwt/*.ml{,i,y}>: pkg_js_of_ocaml.ppx
+<src/higher_level_lwt/*.ml{,i,y}>: pkg_lwt
+<src/higher_level_lwt/*.ml{,i,y}>: pkg_lwt.ppx
+<src/higher_level_lwt/*.ml{,i,y}>: use_high_level
+<src/higher_level_lwt/*.ml{,i,y}>: use_nodejs
 # OASIS_STOP
 "examples": not_hygienic

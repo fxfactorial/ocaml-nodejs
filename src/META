@@ -1,11 +1,20 @@
 # OASIS_START
-# DO NOT EDIT (digest: 6dd0f89782e79f1178eb5b53115af1a3)
+# DO NOT EDIT (digest: 6a9fa993d66c7c4cc0616548c2524e17)
 version = "1.0.0"
 description = "js_of_ocaml bindings for nodejs"
 requires = "js_of_ocaml js_of_ocaml.ppx lwt.ppx lwt"
 archive(byte) = "nodejs.cma"
 archive(byte, plugin) = "nodejs.cma"
 exists_if = "nodejs.cma"
+package "high_level_lwt" (
+ version = "1.0.0"
+ description = "js_of_ocaml bindings for nodejs"
+ requires = "nodejs.high_level"
+ archive(byte) = "high_level_lwt.cma"
+ archive(byte, plugin) = "high_level_lwt.cma"
+ exists_if = "high_level_lwt.cma"
+)
+
 package "high_level" (
  version = "1.0.0"
  description = "js_of_ocaml bindings for nodejs"

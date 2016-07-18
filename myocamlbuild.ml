@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: 1bfb0effec63dc9ec1ea38f715fceaab) *)
+(* DO NOT EDIT (digest: d27d68596339d1cde6f19123586c3ac2) *)
 module OASISGettext = struct
 (* # 22 "src/oasis/OASISGettext.ml" *)
 
@@ -768,7 +768,11 @@ open Ocamlbuild_plugin;;
 let package_default =
   {
      MyOCamlbuildBase.lib_ocaml =
-       [("nodejs", ["src"], []); ("high_level", ["src/higher_level"], [])];
+       [
+          ("nodejs", ["src"], []);
+          ("high_level", ["src/higher_level"], []);
+          ("high_level_lwt", ["src/higher_level_lwt"], [])
+       ];
      lib_c = [];
      flags =
        [
@@ -786,9 +790,43 @@ let package_default =
             [
                (OASISExpr.EBool true,
                  S [A "-g"; A "-w"; A "+a-4-40..42-44-45-48"])
+            ]);
+          (["oasis_library_high_level_byte"; "ocaml"; "link"; "byte"],
+            [
+               (OASISExpr.EBool true,
+                 S [A "-g"; A "-w"; A "+a-4-40..42-44-45-48"])
+            ]);
+          (["oasis_library_high_level_byte"; "ocaml"; "ocamldep"; "byte"],
+            [
+               (OASISExpr.EBool true,
+                 S [A "-g"; A "-w"; A "+a-4-40..42-44-45-48"])
+            ]);
+          (["oasis_library_high_level_byte"; "ocaml"; "compile"; "byte"],
+            [
+               (OASISExpr.EBool true,
+                 S [A "-g"; A "-w"; A "+a-4-40..42-44-45-48"])
+            ]);
+          (["oasis_library_high_level_lwt_byte"; "ocaml"; "link"; "byte"],
+            [
+               (OASISExpr.EBool true,
+                 S [A "-g"; A "-w"; A "+a-4-40..42-44-45-48"])
+            ]);
+          (["oasis_library_high_level_lwt_byte"; "ocaml"; "ocamldep"; "byte"],
+            [
+               (OASISExpr.EBool true,
+                 S [A "-g"; A "-w"; A "+a-4-40..42-44-45-48"])
+            ]);
+          (["oasis_library_high_level_lwt_byte"; "ocaml"; "compile"; "byte"],
+            [
+               (OASISExpr.EBool true,
+                 S [A "-g"; A "-w"; A "+a-4-40..42-44-45-48"])
             ])
        ];
-     includes = [("src/higher_level", ["src"])]
+     includes =
+       [
+          ("src/higher_level_lwt", ["src/higher_level"]);
+          ("src/higher_level", ["src"])
+       ]
   }
   ;;
 
@@ -796,6 +834,6 @@ let conf = {MyOCamlbuildFindlib.no_automatic_syntax = false}
 
 let dispatch_default = MyOCamlbuildBase.dispatch_default conf package_default;;
 
-# 800 "myocamlbuild.ml"
+# 838 "myocamlbuild.ml"
 (* OASIS_STOP *)
 Ocamlbuild_plugin.dispatch dispatch_default;;

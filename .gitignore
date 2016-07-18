@@ -24,3 +24,6 @@ examples/node_modules
 package.json
 junk.ml
 *.js
+
+examples/buffer
+examples/file_system

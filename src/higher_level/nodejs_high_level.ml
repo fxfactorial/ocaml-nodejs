@@ -2,6 +2,13 @@ let __filename () = Nodejs.__filename () |> Js.to_string
 
 let __dirname () = Nodejs.__dirname () |> Js.to_string
 
+
+module Buffer = struct
+
+  
+end
+
+
 module Events = struct
 
   class event_emmiter = object
