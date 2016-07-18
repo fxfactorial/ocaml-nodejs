@@ -13,3 +13,9 @@ let () =
   e#event_names |> List.iter print_endline;
   e#emit "speak"
 
+let () =
+  let s =
+    new Net.server (fun client -> print_endline "Client connected")
+  in
+
+  s#listen 8124 (fun () -> print_endline "Created a server")

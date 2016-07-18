@@ -43,3 +43,21 @@ module Fs = struct
     Nodejs.Fs.fs##readFile (Js.string file_name) (Js.wrap_callback callback)
 
 end
+
+module Net = struct
+
+  class server listener = object
+    val k =
+      Nodejs.Net.net##createServer_withConnListener (Js.wrap_callback listener)
+    (* method listen : 'a 'b. int -> ('a -> 'b) -> unit = fun port callback -> *)
+      (*   k##listen port (Js.wrap_callback callback) *)
+    method listen port callback = k##listen port (Js.wrap_callback callback)
+
+
+  end
+
+  (* let create_server listener = *)
+  (*   Nodejs.Net.net##createServer_withConnListener (Js.wrap_callback listener) *)
+
+
+end

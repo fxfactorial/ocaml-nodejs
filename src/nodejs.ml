@@ -232,7 +232,7 @@ module Net = struct
     method close_withCallback : (error_arg -> unit) Js.callback Js.meth
     method getConnections : (error_arg -> int -> unit) Js.callback Js.meth
     (* Later type it, a server or socket *)
-    method listen : int -> 'a Js.callback -> unit Js.meth
+    method listen : int -> (unit -> unit) Js.callback -> unit Js.meth
 
     method maxConnections : int Js.prop
     method listening : bool Js.t Js.readonly_prop

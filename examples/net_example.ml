@@ -1,6 +1,5 @@
 
 open Nodejs
-open Bindings_utils
 
 let () =
   let server = Net.net##createServer_withConnListener
