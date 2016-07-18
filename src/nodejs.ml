@@ -281,10 +281,6 @@ end
 
 (* end *)
 
-module Http = struct
-
-end
-
 
 module Fs = struct
 
@@ -330,5 +326,34 @@ module Os = struct
   end
 
   let os : os Js.t = Bindings_utils.require_module "os"
+
+end
+
+module Http = struct
+
+  class type agent = object
+    (* method createConnection *)
+    (* method destroy *)
+    (* method freeSockets *)
+    (* method getName *)
+    (* method maxFreeSockets *)
+    (* method maxSockets *)
+    (* method requests *)
+    (* method sockets *)
+  end
+
+  class type client_request = object
+    inherit Stream.writable_stream
+
+  end
+
+  let agent : agent Js.t = (Bindings_utils.require_module "http")##.Agent
+
+  let agent_with_options :
+    (<keepAlive: bool Js.t Js.readonly_prop;
+      keepAliveMsecs : int Js.readonly_prop;
+      maxSockets : int Js.readonly_prop;
+      maxFreeSockets : int Js.readonly_prop> Js.t -> agent Js.t) Js.constr =
+    (Bindings_utils.require_module "http")##.Agent
 
 end
