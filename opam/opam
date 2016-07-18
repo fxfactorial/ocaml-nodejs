@@ -1,6 +1,7 @@
+# -*- conf -*-
 opam-version: "1.2"
 name: "nodejs"
-version: "0.9"
+version: "1.0.0"
 maintainer: "Edgar Aroutiounian <edgar.factorial@gmail.com>"
 authors: [ "Edgar Aroutiounian <edgar.factorial@gmail.com>" ]
 license: "BSD-3-clause"
@@ -21,13 +22,11 @@ build-test: [
   ["ocaml" "setup.ml" "-test"]
 ]
 depends: [
-  "js_of_ocaml" {>= "2.7"}
-  "lwt" {>= "2.5.1"}
-  "magic-mime"
+  "js_of_ocaml" {>= "2.8.1"}
+  "lwt" {>= "2.5.2"}
   "ocamlfind" {build}
-  "yojson"
 ]
-available: [ ocaml-version >= "4.02.0" ]
+available: [ ocaml-version >= "4.02.3" ]
 
 depexts: [
   [["debian"] ["nodejs"]]
@@ -39,28 +38,6 @@ post-messages: [
   "Now you can write OCaml and execute on node."
   "Example assuming file name of c.ml:"
   "
-open Nodejs
-
-let () =
-
-  let server =
-    (* Throw away the incoming_message *)
-    Http.create_server begin fun _ response ->
-      (* Read the file sync *)
-      (match Fs.read_file_sync \"./client.html\" with
-       | String data ->
-         response#write_head ~status_code:200 [(\"Content-type\", \"text/html\")];
-         response#end_ ~data:(String data) ()
-       | Buffer _ -> ())
-    end
-  in
-  ignore begin
-    server#listen ~port:8080 begin fun () ->
-
-      Printf.sprintf \"Started Server and Running node: %s\" (new process#version)
-      |> print_endline
-    end
-  end
   "
   "ocamlfind ocamlc c.ml -linkpkg -package nodejs -o T.out"
   "js_of_ocaml T.out"

@@ -1,10 +1,18 @@
 # OASIS_START
-# DO NOT EDIT (digest: 4832a7b31a1c42c2c0de3a836a423b37)
-version = "0.9"
+# DO NOT EDIT (digest: 6dd0f89782e79f1178eb5b53115af1a3)
+version = "1.0.0"
 description = "js_of_ocaml bindings for nodejs"
-requires = "js_of_ocaml js_of_ocaml.ppx lwt.ppx lwt yojson magic-mime"
+requires = "js_of_ocaml js_of_ocaml.ppx lwt.ppx lwt"
 archive(byte) = "nodejs.cma"
 archive(byte, plugin) = "nodejs.cma"
 exists_if = "nodejs.cma"
+package "high_level" (
+ version = "1.0.0"
+ description = "js_of_ocaml bindings for nodejs"
+ requires = "nodejs"
+ archive(byte) = "high_level.cma"
+ archive(byte, plugin) = "high_level.cma"
+ exists_if = "high_level.cma"
+)
 # OASIS_STOP
 

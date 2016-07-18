@@ -1,22 +1,25 @@
-pkgs := socket_io,colors_js
+pkgs := nodejs.higher_level,js_of_ocaml.ppx
 js_debug := --debug-info --no-inline --pretty
 
-# Do not use it breaks the script, very odd!
-define colorecho
-      @tput setaf 6
-      @echo $1
-      @tput sgr0
-endef
+all:buffer file_system
 
-run:all clean
-	@npm install socket.io colors
-	node chat_server.js
+buffer:buffer_example.ml
+	ocamlfind ocamlc -g -package ${pkgs} -linkpkg $< -o $@
+	js_of_ocaml ${js_debug} $@ -o $@.js
+	node $@.js
 
-all:
-	@ocamlfind ocamlc chat_server.ml -package $(pkgs) -linkpkg
-	@js_of_ocaml $(js_debug) a.out -o chat_server.js
+file_system:file_system.ml
+	ocamlfind ocamlc -g -package ${pkgs} -linkpkg $< -o $@
+	js_of_ocaml ${js_debug} $@ -o $@.js
+	node $@.js
+
+high_level:high_level.ml
+	ocamlfind ocamlc -g -package ${pkgs} -linkpkg $< -o $@
+	js_of_ocaml ${js_debug} $@ -o $@.js
+	node $@.js
 
 clean:
-	@rm -f chat_server.cmi chat_server.cmo chat_server.cmt a.out
+	@rm -f *.cmi *.cmo *.cmt a.out *.js \
+	buffer file_system high_level
 
-.PHONY:clean
+.PHONY:clean file_system buffer
