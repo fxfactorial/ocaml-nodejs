@@ -46,13 +46,42 @@ end
 
 module Net = struct
 
+  type exn += Socket_not_init
+
+  class socket fresh_socket = object
+
+    val mutable socket_handle : Nodejs.Net.socket Js.t Js.opt = Js.null
+    val mutable init_socket = false
+
+    initializer
+      if fresh_socket
+      then socket_handle <- new%js Nodejs.Net.socket |> Js.Opt.return;
+      init_socket <- true
+
+    method set_handle raw_socket =
+      socket_handle <- raw_socket |> Js.Opt.return;
+      init_socket <- true
+
+    method write data =
+      if init_socket then begin
+        let c = Js.Opt.get socket_handle (fun _ -> assert false) in
+        c##write (Nodejs.Buffer.buffer_static##from (Js.string data))
+      end else raise Socket_not_init
+
+  end
+
+
   class server listener = object
     val k =
-      Nodejs.Net.net##createServer_withConnListener (Js.wrap_callback listener)
+      let wrapped = fun given_socket ->
+        let s = new socket false in
+        s#set_handle given_socket;
+        listener s
+      in
+      Nodejs.Net.net##createServer_withConnListener (Js.wrap_callback wrapped)
     (* method listen : 'a 'b. int -> ('a -> 'b) -> unit = fun port callback -> *)
       (*   k##listen port (Js.wrap_callback callback) *)
     method listen port callback = k##listen port (Js.wrap_callback callback)
-
 
   end
 

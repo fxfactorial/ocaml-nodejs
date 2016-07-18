@@ -15,7 +15,9 @@ let () =
 
 let () =
   let s =
-    new Net.server (fun client -> print_endline "Client connected")
+    new Net.server (fun client ->
+        client#write "Welcome to the Matrix";
+        print_endline "Client connected")
   in
 
   s#listen 8124 (fun () -> print_endline "Created a server")
