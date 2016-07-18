@@ -5,7 +5,23 @@ let __dirname () = Nodejs.__dirname () |> Js.to_string
 
 module Buffer = struct
 
-  
+  class buffer ?(default=1024) fresh_buffer = object
+
+    val mutable buffer_handle : Nodejs.Buffer.buffer Js.t Js.opt = Js.null
+    val mutable init_buffer = false
+
+    initializer
+      if fresh_buffer
+      then buffer_handle <-
+          Nodejs.Buffer.buffer_static##alloc default |> Js.Opt.return;
+      init_buffer <- true
+
+    method set_handle new_handle =
+      buffer_handle <- new_handle |> Js.Opt.return;
+      init_buffer <- true
+
+  end
+
 end
 
 
@@ -47,7 +63,12 @@ module Fs = struct
     result##toString |> Js.to_string
 
   let read_file_async file_name callback =
-    Nodejs.Fs.fs##readFile (Js.string file_name) (Js.wrap_callback callback)
+    let wrapped = fun err given_buffer ->
+      let b = new Buffer.buffer false in
+      b#set_handle given_buffer;
+      callback err given_buffer
+    in
+    Nodejs.Fs.fs##readFile (Js.string file_name) (Js.wrap_callback wrapped)
 
 end
 

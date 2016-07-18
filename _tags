@@ -43,3 +43,4 @@ true: annot, bin_annot
 <src/higher_level_lwt/*.ml{,i,y}>: use_nodejs
 # OASIS_STOP
 "examples": not_hygienic
+"examples_lwt": not_hygienic
