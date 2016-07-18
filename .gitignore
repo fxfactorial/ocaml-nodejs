@@ -27,3 +27,4 @@ junk.ml
 
 examples/buffer
 examples/file_system
+examples_lwt
