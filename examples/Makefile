@@ -1,7 +1,7 @@
-pkgs := nodejs.higher_level,js_of_ocaml.ppx
+pkgs := nodejs.high_level,js_of_ocaml.ppx
 js_debug := --debug-info --no-inline --pretty
 
-all:buffer file_system
+all:buffer file_system high_level events
 
 buffer:buffer_example.ml
 	ocamlfind ocamlc -g -package ${pkgs} -linkpkg $< -o $@
@@ -18,8 +18,13 @@ high_level:high_level.ml
 	js_of_ocaml ${js_debug} $@ -o $@.js
 	node $@.js
 
+events:events_example.ml
+	ocamlfind ocamlc -g -package ${pkgs} -linkpkg $< -o $@
+	js_of_ocaml ${js_debug} $@ -o $@.js
+	node $@.js
+
 clean:
 	@rm -f *.cmi *.cmo *.cmt a.out *.js \
-	buffer file_system high_level
+	buffer file_system high_level events
 
 .PHONY:clean file_system buffer

@@ -15,13 +15,6 @@ module Bindings_utils = struct
   (** Same as console.log *)
   let log obj = Firebug.console##log obj
 
-  (** The current file name *)
-  let __filename () =
-    (Js.Unsafe.eval_string "__filename" : Js.js_string Js.t) |> Js.to_string
-
-  (** The current directory name *)
-  let __dirname () =
-    (Js.Unsafe.eval_string "__dirname" : Js.js_string Js.t) |> Js.to_string
 
   (** Call method of a JavaScript object *)
   let m = Js.Unsafe.meth_call
@@ -69,12 +62,43 @@ module Bindings_utils = struct
 
 end
 
+let __filename () = (Js.Unsafe.eval_string "__filename" : Js.js_string Js.t)
+
+let __dirname () = (Js.Unsafe.eval_string "__dirname" : Js.js_string Js.t)
+
+module Events = struct
+
+  class type event_emitter = object
+    method on : Js.js_string Js.t -> 'a Js.callback -> unit Js.meth
+    method emit : Js.js_string Js.t -> unit Js.meth
+    method emit_with_arg : Js.js_string Js.t -> 'a Js.t -> unit Js.meth
+    method emit_with_two_args :
+      Js.js_string Js.t -> 'a Js.t -> 'b Js.t -> unit Js.meth
+    method getMaxListeners : int Js.meth
+
+    method once : Js.js_string Js.t -> 'a Js.callback -> unit Js.meth
+
+    method addListener : Js.js_string Js.t -> 'a Js.callback -> unit Js.meth
+
+    method eventNames : Js.string_array Js.t Js.meth
+
+  end
+
+  let event_emitter : event_emitter Js.t Js.constr =
+    Bindings_utils.require_module "events"
+
+end
+
+
 module Buffer = struct
 
   class type buffer = object
     method length : int Js.readonly_prop
     method toString : Js.js_string Js.t Js.meth
     method toJSON : 'a. 'a Js.t Js.meth
+    method swap16 : buffer Js.t Js.meth
+    method swap32 : buffer Js.t Js.meth
+
   end
 
   class type buffer_static = object
@@ -84,6 +108,8 @@ module Buffer = struct
       Js.js_string Js.t -> Js.js_string Js.t -> buffer Js.t Js.meth
     method alloc : int -> buffer Js.t Js.meth
     method compare : buffer Js.t -> buffer Js.t -> bool Js.meth
+    method isBuffer : 'a Js.t -> bool Js.meth
+    method isEncoding : Js.js_string Js.t -> bool Js.meth
   end
 
   let buffer_static : buffer_static Js.t = Js.Unsafe.pure_js_expr "Buffer"
