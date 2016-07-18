@@ -9,8 +9,7 @@ let () =
 
 let () =
   let e = new Events.event_emmiter in
-  e#add_listener "speak" (fun junk -> print_endline "Called on speak event");
-
+  e#add_listener "speak" (fun _ -> print_endline "Called on speak event");
   e#event_names |> List.iter print_endline;
   e#emit "speak"
 
