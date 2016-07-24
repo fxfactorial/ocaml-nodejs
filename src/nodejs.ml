@@ -371,6 +371,7 @@ class type process = object
   method env : 'a Js.t Js.readonly_prop
   (* Many more missing *)
   method pid : int Js.readonly_prop
+  method exit : int -> unit Js.meth
 end
 
 let process : process Js.t = Js.Unsafe.variable "process"

@@ -195,6 +195,7 @@ class process = object
   method current_working_directory = js##cwd |> Js.to_string
   method environment_variables : 'b. 'b Js.t = js##.env
   method pid = js##.pid
+  method exit e = js##exit e
 end
 
 let process = new process
