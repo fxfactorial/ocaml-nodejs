@@ -357,3 +357,20 @@ module Http = struct
     (Bindings_utils.require_module "http")##.Agent
 
 end
+
+class type process = object
+  inherit Events.event_emitter
+  method argv : Js.js_string Js.t Js.js_array Js.t Js.readonly_prop
+  method abort : unit Js.meth
+  method arch : Js.js_string Js.t Js.readonly_prop
+  method chdir : Js.js_string Js.t -> unit Js.meth
+  method config : 'a Js.t Js.readonly_prop
+  method connected : bool Js.t Js.readonly_prop
+  method cwd : Js.js_string Js.t Js.meth
+  method disconnect : unit Js.meth
+  method env : 'a Js.t Js.readonly_prop
+  (* Many more missing *)
+  method pid : int Js.readonly_prop
+end
+
+let process : process Js.t = Js.Unsafe.variable "process"

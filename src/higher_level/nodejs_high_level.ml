@@ -182,3 +182,19 @@ module Os = struct
   let load_average () = os_handle##loadavg |> Js.to_array
 
 end
+
+class process = object
+  val js = Nodejs.process
+  method arguments =
+    js##.argv |> Js.to_array |> Array.map Js.to_string |> Array.to_list
+  method abort = js##abort
+  method arch = js##.arch |> Js.to_string
+  method change_dir s = js##chdir (Js.string s)
+  method config : 'a. 'a Js.t = js##.config
+  method connect = js##.connected |> Js.to_bool
+  method current_working_directory = js##cwd |> Js.to_string
+  method environment_variables : 'b. 'b Js.t = js##.env
+  method pid = js##.pid
+end
+
+let process = new process

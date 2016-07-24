@@ -29,3 +29,4 @@ examples/buffer
 examples/file_system
 examples_lwt
 old_readme
+node_modules
