@@ -25,6 +25,7 @@ depends: [
   "js_of_ocaml" {>= "2.8.1"}
   "lwt" {>= "2.5.2"}
   "ocamlfind" {build}
+  "oasis"
 ]
 available: [ ocaml-version >= "4.02.3" ]
 
