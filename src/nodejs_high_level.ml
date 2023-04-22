@@ -1,3 +1,5 @@
+open Js_of_ocaml
+
 let __filename () = Nodejs.__filename () |> Js.to_string
 
 let __dirname () = Nodejs.__dirname () |> Js.to_string

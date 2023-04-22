@@ -1,3 +1,5 @@
+open Js_of_ocaml
+
 let () =
   let result =
     Nodejs.Fs.fs##readFileSync

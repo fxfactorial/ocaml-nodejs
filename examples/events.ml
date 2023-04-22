@@ -1,4 +1,4 @@
-
+open Js_of_ocaml
 
 let () =
   let e = new%js Nodejs.Events.event_emitter in

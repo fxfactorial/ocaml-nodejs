@@ -1,10 +1,12 @@
+open Js_of_ocaml
+
 (** Raw call for doing require("some_module") *)
 
 module Bindings_utils = struct
 
   let require_module s =
     Js.Unsafe.fun_call
-      (Js.Unsafe.js_expr "require")
+      (Js.Unsafe.pure_js_expr "require")
       [|Js.Unsafe.inject (Js.string s)|]
 
   let ( !@ ) f = Js.wrap_callback f
@@ -47,7 +49,7 @@ module Bindings_utils = struct
 
   (** Get all keys of an Object *)
   let keys obj =
-    m (Js.Unsafe.variable "Object") "keys" [|obj|]
+    m (Js.Unsafe.pure_js_expr "Object") "keys" [|obj|]
     |> Js.to_array |> Array.map Js.to_string |> Array.to_list
 
   (** Call a function for each value of each key in an Object, throw
@@ -374,4 +376,4 @@ class type process = object
   method exit : int -> unit Js.meth
 end
 
-let process : process Js.t = Js.Unsafe.variable "process"
+let process : process Js.t = Js.Unsafe.pure_js_expr "process"
