@@ -1,4 +1,3 @@
-
 (* let () = *)
 (*   Nodejs.Dns.dns##resolve4 *)
 (*     (Js.string "google.com") *)
@@ -8,5 +7,4 @@
 (*           arr *)
 (*           |> Js.str_array |> Js.to_array *)
 (*           |> Array.map Js.to_string |> Array.to_list *)
-          (* |> List.iter print_endline)) *)
-
+(* |> List.iter print_endline)) *)
