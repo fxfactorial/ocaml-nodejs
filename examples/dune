@@ -63,3 +63,15 @@
  (deps os.bc.js)
  (action
   (run node %{deps})))
+
+(executable
+ (name file_system_lwt)
+ (modules file_system_lwt)
+ (libraries nodejs_high_level_lwt)
+ (modes js))
+
+(rule
+ (alias runfile_system_lwt)
+ (deps file_system_lwt.bc.js)
+ (action
+  (run node %{deps})))
