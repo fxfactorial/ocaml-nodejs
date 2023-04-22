@@ -3,8 +3,8 @@ open Nodejs_high_level
 let () =
   Fs.read_file_sync "example.json" Fs.Read |> print_endline;
 
-  Fs.read_file_async "example.json"
-    (fun _err contents -> contents#to_string |> print_endline)
+  Fs.read_file_async "example.json" (fun _err contents ->
+    contents#to_string |> print_endline )
 
 let () =
   let e = new Events.event_emmiter in
@@ -15,8 +15,8 @@ let () =
 let () =
   let s =
     new Net.server (fun client ->
-        client#write "Welcome to the Matrix";
-        print_endline "Client connected")
+      client#write "Welcome to the Matrix";
+      print_endline "Client connected" )
   in
 
   s#listen 8124 (fun () -> print_endline "Created a server")
