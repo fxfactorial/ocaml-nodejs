@@ -1,0 +1,18 @@
+(library
+ (public_name nodejs)
+ (modules nodejs)
+ (libraries js_of_ocaml)
+ (preprocess
+  (pps js_of_ocaml-ppx)))
+
+(library
+ (name nodejs_high_level)
+ (modules nodejs_high_level)
+ (libraries js_of_ocaml nodejs)
+ (preprocess
+  (pps js_of_ocaml-ppx)))
+
+(library
+ (name nodejs_high_level_lwt)
+ (modules nodejs_high_level_lwt)
+ (libraries lwt nodejs nodejs_high_level))

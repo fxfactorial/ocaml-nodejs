@@ -1,0 +1,77 @@
+(executables
+ (names buffer file_system events dns net)
+ (modules buffer file_system events dns net)
+ (libraries js_of_ocaml nodejs)
+ (preprocess
+  (pps js_of_ocaml-ppx))
+ (modes js))
+
+(executable
+ (name high_level)
+ (modules high_level)
+ (libraries js_of_ocaml nodejs nodejs_high_level)
+ (preprocess
+  (pps js_of_ocaml-ppx))
+ (modes js))
+
+(executable
+ (name os)
+ (modules os)
+ (libraries js_of_ocaml nodejs nodejs_high_level)
+ (preprocess
+  (pps js_of_ocaml-ppx))
+ (modes js))
+
+(rule
+ (alias runbuffer)
+ (deps buffer.bc.js)
+ (action
+  (run node %{deps})))
+
+(rule
+ (alias runfile_system)
+ (deps file_system.bc.js example.json)
+ (action
+  (run node file_system.bc.js)))
+
+(rule
+ (alias runhigh_level)
+ (deps high_level.bc.js example.json)
+ (action
+  (run node %{deps})))
+
+(rule
+ (alias runevents)
+ (deps events.bc.js)
+ (action
+  (run node %{deps})))
+
+(rule
+ (alias rundns)
+ (deps dns.bc.js)
+ (action
+  (run node %{deps})))
+
+(rule
+ (alias runnet)
+ (deps net.bc.js)
+ (action
+  (run node %{deps})))
+
+(rule
+ (alias runos)
+ (deps os.bc.js)
+ (action
+  (run node %{deps})))
+
+(executable
+ (name file_system_lwt)
+ (modules file_system_lwt)
+ (libraries nodejs_high_level_lwt)
+ (modes js))
+
+(rule
+ (alias runfile_system_lwt)
+ (deps file_system_lwt.bc.js)
+ (action
+  (run node %{deps})))
